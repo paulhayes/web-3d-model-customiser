@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build-web": "browserify main.js -o dist/main.js -t [babelify browserify minifyify]",
+    "build-web": "browserify main.js -o dist/main.js -t [babelify browserify]",
     "serve": "npx http-server dist",
-    "start-dev": "budo main.js:dist/main.js --port=8080 --live -- -b -t babelify"
+    "start-dev": "budo main.js --dir dist --port=8080 --live -- main.js -o dist/main.js -t [babelify browserify]"
   },
   "author": "",
   "license": "ISC",

@@ -78,8 +78,10 @@ const { prepareOutput } = require('@jscad/core/io/prepareOutput');
 const { convertToBlob } = require('@jscad/core/io/convertToBlob');
 const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats');
 const { generateOutputFile } = require('./generateOutputFile.js');
+
 function init() {
-  console.log('test');
+  console.log('test3');
+  //console.log(covid19_headband_quadro_rc31);
 }
 
 document.addEventListener('DOMContentLoaded', function (event) {
