@@ -11,6 +11,7 @@ and go to http://127.0.0.1:8080/ in your browser
 ## TODO
 
 * 3d viewer
+* model selection
 * css styling
 * rendering progress bar/message
 
