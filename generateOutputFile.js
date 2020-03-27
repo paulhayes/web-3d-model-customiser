@@ -1,3 +1,13 @@
+function isSafari () {
+  return /Version\/[\d\.]+.*Safari/.test(window.navigator.userAgent) // FIXME WWW says don't use this
+}
+
+function getWindowURL () {
+  if (window.URL) return window.URL
+  else if (window.webkitURL) return window.webkitURL
+  else throw new Error("Your browser doesn't support window.URL")
+}
+
 function generateOutputFileFileSystem (extension, blob, callback) {
   var request = window.requestFileSystem || window.webkitRequestFileSystem
   if (!request) {
