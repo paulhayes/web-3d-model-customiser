@@ -1,0 +1,25 @@
+{
+  "name": "model_customiser",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-web": "browserify main.js -o dist/main.js -t [babelify browserify minifyify]",
+    "serve": "npx http-server dist",
+    "start-dev": "budo main.js:dist/main.js --port=8080 --live -- -b -t babelify"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies":{
+    "@jscad/core": "^0.4.0",
+    "@jscad/csg": "^0.7.0"
+  },
+  "devDependencies": {
+    "babelify": "^7.2.0",
+    "browserify": "^16.5.0",
+    "budo": "^11.6.3",
+    "http-server": "^0.12.1",
+    "minifyify": "^7.3.5"
+  }
+}
