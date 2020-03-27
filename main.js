@@ -18,6 +18,7 @@ var hasOutputFile = false;
 var outputFile = null;
 var buildOutput ;
 var downloadButton
+var filename = "test";
 
 function init(){
   downloadButton = document.getElementById('download-button');
@@ -40,10 +41,9 @@ function init(){
   });
   
   downloadButton.addEventListener('click',function(){
-    setTimeout(function(){
-      onSaveInProgress();
-      updateModel();
-      generateFile();  
+    onSaveInProgress();
+    setTimeout(function(){      
+      updateModel(generateFile);
     },50);
   });
 }
@@ -56,7 +56,7 @@ function onSaveComplete(){
   downloadButton.disabled = false;  
 }
 
-function updateModel(){
+function updateModel(completeCallback){
 
   //const parameters = getParameterValues(this.paramControls)
   let name = document.getElementById("name-field").value;
@@ -64,6 +64,7 @@ function updateModel(){
   console.log({name,material});
   let now = new Date();
   let date = now.getDate().pad(2)+"."+(now.getMonth()+1).pad(2)+"."+now.getFullYear();
+  filename = name+"-"+date;
   let script = `function main(){
     var l = vector_text(0,0,"${name} \\n${material} ${date}");
     var o = [];
@@ -77,9 +78,12 @@ function updateModel(){
   }
    `;
 
-  rebuildSolids(script+modelJSCad,"",{},function(err,output){
+   rebuildSolidsInWorker(script+modelJSCad,"",{},function(err,output){
+    console.log("build complete");
     console.log(output);
     buildOutput = output;
+    if(completeCallback)
+      completeCallback();
   },{memFs:true});
   
 }
@@ -88,10 +92,10 @@ var saveFile = (function () {
   var a = document.createElement("a");
   document.body.appendChild(a);
   a.style = "display: none";
-  return function (blobUrl, fileName) {
+  return function (blobUrl) {
     console.log("saving");
       a.href = blobUrl;
-      a.download = fileName;
+      a.download = filename+".stl";
       a.click();
       setTimeout(function(){
         window.URL.revokeObjectURL(blobUrl);		        	
@@ -115,11 +119,11 @@ function generateFile() {
   function onDone(data, downloadAttribute, blobMode, noData) {
     hasOutputFile = true;
     outputFile = { data, downloadAttribute, blobMode, noData };
-    saveFile(outputFile.data,"test.stl");
+    saveFile(outputFile.data);
     onSaveComplete();
   }
 
-  generateOutputFile("stl", blob, onDone, null);  
+  generateOutputFile("stl", blob, onDone, null, filename);  
 }
 
 document.addEventListener('DOMContentLoaded', function (event) {
