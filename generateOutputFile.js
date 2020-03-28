@@ -1,4 +1,14 @@
-function generateOutputFileFileSystem (extension, blob, callback) {
+function isSafari () {
+  return /Version\/[\d\.]+.*Safari/.test(window.navigator.userAgent) // FIXME WWW says don't use this
+}
+
+function getWindowURL () {
+  if (window.URL) return window.URL
+  else if (window.webkitURL) return window.webkitURL
+  else throw new Error("Your browser doesn't support window.URL")
+}
+
+function generateOutputFileFileSystem (extension, blob, callback, filename) {
   var request = window.requestFileSystem || window.webkitRequestFileSystem
   if (!request) {
     throw new Error('Your browser does not support the HTML5 FileSystem API. Please try the Chrome browser instead.')
@@ -6,7 +16,7 @@ function generateOutputFileFileSystem (extension, blob, callback) {
   // console.log("Trying download via FileSystem API")
   // create a random directory name:
   var dirname = 'OpenJsCadOutput1_' + parseInt(Math.random() * 1000000000, 10) + '_' + extension
-  var filename = 'output.' + extension // FIXME this should come from this.filename
+  filename = ( filename || 'output' ) +'.'+ extension // FIXME this should come from this.filename
   request(TEMPORARY, 20 * 1024 * 1024, function (fs) {
     fs.root.getDirectory(dirname, {create: true, exclusive: true}, function (dirEntry) {
       dirEntry.getFile(filename, {create: true, exclusive: true}, function (fileEntry) {
@@ -55,11 +65,11 @@ function generateOutputFileBlobUrl (extension, blob, callback) {
 }
 
 
-function generateOutputFile (extension, blob, onDone, context) {
+function generateOutputFile (extension, blob, onDone, context, filename) {
   try {
-    generateOutputFileFileSystem(extension, blob, onDone.bind(context))
+    generateOutputFileFileSystem(extension, blob, onDone.bind(context), filename)
   } catch (e) {
-    generateOutputFileBlobUrl(extension, blob, onDone.bind(context))
+    generateOutputFileBlobUrl(extension, blob, onDone.bind(context), filename)
   }
 }
 
