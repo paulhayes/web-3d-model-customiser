@@ -79,9 +79,115 @@ const { convertToBlob } = require('@jscad/core/io/convertToBlob');
 const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats');
 const { generateOutputFile } = require('./generateOutputFile.js');
 
+let modelName = 'FaceShieldNoLogoRC3FromPrusaSlicer';
+var modelFile = `models/${modelName}.jscad`;
+var modelJSCad;
+var hasOutputFile = false;
+var outputFile = null;
+var buildOutput;
+var downloadButton;
+
 function init() {
-  console.log('test3');
-  //console.log(covid19_headband_quadro_rc31);
+  downloadButton = document.getElementById('download-button');
+  Number.prototype.pad = function (size) {
+    var s = String(this);
+    while (s.length < (size || 2)) {
+      s = "0" + s;
+    }
+    return s;
+  };
+
+  fetch(modelFile).then(function (response) {
+    if (response.ok) {
+      response.text().then(function (val) {
+        modelJSCad = val;
+        updateModel();
+      });
+    } else {
+      console.error(response.statusText);
+    }
+  });
+
+  downloadButton.addEventListener('click', function () {
+    setTimeout(function () {
+      onSaveInProgress();
+      updateModel();
+      generateFile();
+    }, 50);
+  });
+}
+
+function onSaveInProgress() {
+  downloadButton.disabled = true;
+}
+
+function onSaveComplete() {
+  downloadButton.disabled = false;
+}
+
+function updateModel() {
+
+  //const parameters = getParameterValues(this.paramControls)
+  let name = document.getElementById("name-field").value;
+  let material = document.getElementById("material-type").value;
+  console.log({ name, material });
+  let now = new Date();
+  let date = now.getDate().pad(2) + "." + (now.getMonth() + 1).pad(2) + "." + now.getFullYear();
+  let script = `function main(){
+    var l = vector_text(0,0,"${name} \\n${material} ${date}");
+    var o = [];
+    var depth=1.2;
+    l.forEach(function(pl) {                   // pl = polyline (not closed)
+       o.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
+    });
+    let label = cube({size: 0, center:false}).union(union(o).scale([0.15,0.15,1])).rotateX(90).rotateZ(-90).translate([37+depth,95,10]);
+    
+    return ${modelName}().subtract(label);
+  }
+   `;
+
+  rebuildSolids(script + modelJSCad, "", {}, function (err, output) {
+    console.log(output);
+    buildOutput = output;
+  }, { memFs: true });
+}
+
+var saveFile = function () {
+  var a = document.createElement("a");
+  document.body.appendChild(a);
+  a.style = "display: none";
+  return function (blobUrl, fileName) {
+    console.log("saving");
+    a.href = blobUrl;
+    a.download = fileName;
+    a.click();
+    setTimeout(function () {
+      window.URL.revokeObjectURL(blobUrl);
+    });
+  };
+}();
+
+function generateFile() {
+  let objects = buildOutput;
+  console.log('generating file');
+  let outputFormat = {
+    displayName: 'STL (Binary)',
+    description: 'STereoLithography, Binary',
+    extension: 'stl',
+    mimetype: 'application/sla',
+    convertCSG: true,
+    convertCAG: false
+  };
+  const blob = convertToBlob(prepareOutput(objects, { format: outputFormat.extension }));
+
+  function onDone(data, downloadAttribute, blobMode, noData) {
+    hasOutputFile = true;
+    outputFile = { data, downloadAttribute, blobMode, noData };
+    saveFile(outputFile.data, "test.stl");
+    onSaveComplete();
+  }
+
+  generateOutputFile("stl", blob, onDone, null);
 }
 
 document.addEventListener('DOMContentLoaded', function (event) {
@@ -32177,34 +32283,38 @@ return /******/ (function(modules) { // webpackBootstrap
 
 },{"./package.json":121}],121:[function(require,module,exports){
 module.exports={
-  "_from": "estraverse@^4.2.0",
+  "_args": [
+    [
+      "estraverse@4.3.0",
+      "/Users/seb15/Dropbox/projects/3dcrowd/web-3d-model-customiser"
+    ]
+  ],
+  "_development": true,
+  "_from": "estraverse@4.3.0",
   "_id": "estraverse@4.3.0",
   "_inBundle": false,
   "_integrity": "sha512-39nnKffWz8xN1BU/2c79n9nB9HDzo0niYUqx6xyqUnyoAnQyyWpOTdZEeiCch8BBu515t4wp9ZmgVfVhn9EBpw==",
   "_location": "/estraverse",
   "_phantomChildren": {},
   "_requested": {
-    "type": "range",
+    "type": "version",
     "registry": true,
-    "raw": "estraverse@^4.2.0",
+    "raw": "estraverse@4.3.0",
     "name": "estraverse",
     "escapedName": "estraverse",
-    "rawSpec": "^4.2.0",
+    "rawSpec": "4.3.0",
     "saveSpec": null,
-    "fetchSpec": "^4.2.0"
+    "fetchSpec": "4.3.0"
   },
   "_requiredBy": [
     "/@jscad/core"
   ],
   "_resolved": "https://registry.npmjs.org/estraverse/-/estraverse-4.3.0.tgz",
-  "_shasum": "398ad3f3c5a24948be7725e83d11a7de28cdbd1d",
-  "_spec": "estraverse@^4.2.0",
-  "_where": "/Users/paulhayes/Workspace/model_customiser/node_modules/@jscad/core",
+  "_spec": "4.3.0",
+  "_where": "/Users/seb15/Dropbox/projects/3dcrowd/web-3d-model-customiser",
   "bugs": {
     "url": "https://github.com/estools/estraverse/issues"
   },
-  "bundleDependencies": false,
-  "deprecated": false,
   "description": "ECMAScript JS AST traversal functions",
   "devDependencies": {
     "babel-preset-env": "^1.6.1",

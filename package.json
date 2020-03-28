@@ -11,7 +11,7 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies":{
+  "dependencies": {
     "@jscad/core": "^0.4.0",
     "@jscad/csg": "^0.7.0"
   },

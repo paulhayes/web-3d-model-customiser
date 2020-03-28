@@ -11,7 +11,7 @@ const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats'
 const { generateOutputFile } = require('./generateOutputFile.js');
 
 
-let modelName = 'FaceShieldNoLogoRC3FromPrusaSlicer';  
+let modelName = 'FaceShieldRC3Single';  
 var modelFile = `models/${modelName}.jscad`;
 var modelJSCad;
 var hasOutputFile = false;
@@ -63,21 +63,45 @@ function updateModel(){
   let material = document.getElementById("material-type").value;
   console.log({name,material});
   let now = new Date();
-  let date = now.getDate().pad(2)+"."+(now.getMonth()+1).pad(2)+"."+now.getFullYear();
-  let script = `function main(){
-    var l = vector_text(0,0,"${name} \\n${material} ${date}");
-    var o = [];
-    var depth=1.2;
-    l.forEach(function(pl) {                   // pl = polyline (not closed)
-       o.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
-    });
-    let label = cube({size: 0, center:false}).union(union(o).scale([0.15,0.15,1])).rotateX(90).rotateZ(-90).translate([37+depth,95,10]);
+  let date = now.getDate().pad(2)+"."+(now.getMonth()+1).pad(2)+"."+now.getFullYear().toString().substr(2, 2);;
+  let script = `
+function main() { 
+    let shield = centrePoly(FaceShieldRC3Single()); 
+
+    let labeloutlines1 = vector_text(0,0,"${material} ${date}");
+    let labelextruded1 = [];
+    let labeloutlines2 = vector_text(0,0,"${name}");
+    let labelextruded2 = [];
     
-    return ${modelName}().subtract(label);
-  }
+    let depth=0.75;
+    let xpos = 87.6-depth; 
+    let yposleft = -14; 
+    let yposright = -47; 
+    let zpos = -1.5; 
+    labeloutlines1.forEach(function(pl) {                   // pl = polyline (not closed)
+      labelextruded1.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
+    });
+    labeloutlines2.forEach(function(pl) {                   // pl = polyline (not closed)
+      labelextruded2.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
+    });
+    
+    let labelleft = union(labelextruded1).scale([0.15,0.15,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft,zpos]);
+    let labelright = union(labelextruded2).scale([0.15,0.15,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,zpos]);
+  
+   return shield.subtract(labelleft).subtract(labelright); 
+    
+   
+}
+
+function centrePoly(poly) { 
+    let bounds = poly.getBounds(); 
+    let centre = bounds[1].plus(bounds[0]).scale(-0.5);
+    return poly.translate([centre.x, centre.y, centre.z]);
+}
    `;
 
   rebuildSolids(script+modelJSCad,"",{},function(err,output){
+    console.log(script);
     console.log(output);
     buildOutput = output;
   },{memFs:true});
