@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="style.css">
+  </head>
   <body>
     <script src="main.js"></script>
     <div id="form">
-      <select>
+      <!-- select>
         <option>
           single
         </option>
         <option>
           four stacked
         </option>
-      </select>
-    <select id="material-type">
+      </select -->
+      <label for="material-type">material </label><select id="material-type">
       <option value="PET">
         PET
       </option>
@@ -22,8 +25,10 @@
         PLA
       </option>
     </select>
-     <input id="name-field" type="text" >
+     <label for="name-field">name </label><input id="name-field" type="text" >
      <input id="download-button" type="button" value="download">
+     <div class="update-model" style="visibility: hidden;">Updating Model</div>
+     <div oncontextmenu="return false;" id="viewerContainer"></div>
     </div>
   </body>
 </html>

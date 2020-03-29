@@ -10,8 +10,14 @@ and go to http://127.0.0.1:8080/ in your browser
 
 ## TODO
 
-* 3d viewer
 * model selection
 * css styling
-* rendering progress bar/message
+* progress bar?
 
+## Changelog
+
+* Created initial prototype
+* Added 3d viewer
+* Show rendering message
+* Trigger rendering on user input
+* Disable download while rendering

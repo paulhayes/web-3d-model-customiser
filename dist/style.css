@@ -1,0 +1,29 @@
+#viewerContainer {
+  display:block;
+  position: absolute;
+  margin: 0px;             /* not inherited */
+  border: 0px none black;  /* not inherited */
+  padding: 0px;            /* not inherited */
+
+  /* ensure that the canvas uses the whole width and height of the document */
+  background: white;
+  width: 900px;
+  height: 600px;
+
+  top: 0px;
+  bottom: 0px;
+  top:50px;
+  left:0px;
+}
+
+canvas {
+  margin: 0px;            /* not inherited */
+  border: 0px none black; /* not inherited */
+  padding: 0px;           /* not inherited */
+
+  /* ensure that the canvas uses the whole width and height of the document */
+  height: 100%;
+  width: 100%;
+
+  cursor: move;        /* show that we can change orientation of view */
+}

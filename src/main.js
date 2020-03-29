@@ -8,19 +8,52 @@ const { mergeSolids } = require('@jscad/core/utils/mergeSolids')
 const { prepareOutput } = require('@jscad/core/io/prepareOutput')
 const { convertToBlob } = require('@jscad/core/io/convertToBlob')
 const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats')
-const { generateOutputFile } = require('./generateOutputFile.js');
+const { generateOutputFile } = require('./generateOutputFile');
+const Viewer = require('./jscad-viewer-lightgl');
 
 
-let modelName = 'FaceShieldRC3Single';  
+var modelName = 'FaceShieldRC3Single';  
 var modelFile = `models/${modelName}.jscad`;
 var modelJSCad;
 var hasOutputFile = false;
 var outputFile = null;
-var buildOutput ;
-var downloadButton
+var buildOutput;
+var downloadButton;
+var materialTypeDropdown;
+var nameField;
+var viewer;
+var needsUpdate;
+var updatingModel;
+var lastInput;
+var updateModelMessageNodes;
+const inputTimeout = 1000;
 
 function init(){
   downloadButton = document.getElementById('download-button');
+  nameField = document.getElementById("name-field");
+  updateModelMessageNodes = document.getElementsByClassName("update-model");
+  materialTypeDropdown = document.getElementById("material-type");
+  //nameField.oninput = updateModel;
+  nameField.oninput = function(){ lastInput=Date.now() };
+  materialTypeDropdown.onchange = function(){ lastInput=Date.now()-inputTimeout };
+  var containerdiv = document.getElementById('viewerContainer');
+  var viewerdiv = document.createElement('div');
+  viewerdiv.className = 'viewer'
+  viewerdiv.style.width = '100%'
+  viewerdiv.style.height = '100%'
+  containerdiv.appendChild(viewerdiv);
+  viewer = new Viewer(viewerdiv,{
+    camera:{"position":{"x":-11.963978423799869,"y":30.454086159474876,"z":176.7626167126004},"angle":{"x":-64.79999999999998,"y":1.6000000000000003,"z":-59.39999999999999}},
+    plate:{
+      draw:false,
+    },
+    axis:{
+      draw:false
+    } 
+  });
+
+  setInterval(inputUpdateCheck,100);
+  viewer.init();
   Number.prototype.pad = function(size) {
     var s = String(this);
     while (s.length < (size || 2)) {s = "0" + s;}
@@ -40,12 +73,22 @@ function init(){
   });
   
   downloadButton.addEventListener('click',function(){
+    onSaveInProgress(); 
     setTimeout(function(){
-      onSaveInProgress();
-      updateModel();
+           
       generateFile();  
     },50);
   });
+}
+
+function inputUpdateCheck(){
+  if(lastInput){
+    var elapsed = Date.now()-lastInput;
+    if(elapsed>inputTimeout){
+      lastInput = false;
+      updateModel();
+    }
+  }
 }
 
 function onSaveInProgress(){
@@ -56,11 +99,33 @@ function onSaveComplete(){
   downloadButton.disabled = false;  
 }
 
-function updateModel(){
+function onModelBuildStart(){
+  downloadButton.disabled = true;
+  for (i = 0; i < updateModelMessageNodes.length; i++) {
+    updateModelMessageNodes[i].style.visibility = "visible";
+  }
+}
 
+function onModelBuildComplete(){
+  for (i = 0; i < updateModelMessageNodes.length; i++) {
+    updateModelMessageNodes[i].style.visibility = "hidden";
+  }
+  downloadButton.disabled = false;  
+
+}
+
+
+function updateModel(){
+  if(updatingModel){
+    needsUpdate = true;
+    return;
+  }
+  console.log("updating model");
+  updatingModel = true;
+  onModelBuildStart();
   //const parameters = getParameterValues(this.paramControls)
-  let name = document.getElementById("name-field").value;
-  let material = document.getElementById("material-type").value;
+  let name = nameField.value;
+  let material = materialTypeDropdown.value;
   console.log({name,material});
   let now = new Date();
   let date = now.getDate().pad(2)+"."+(now.getMonth()+1).pad(2)+"."+now.getFullYear().toString().substr(2, 2);;
@@ -100,10 +165,23 @@ function centrePoly(poly) {
 }
    `;
 
-  rebuildSolids(script+modelJSCad,"",{},function(err,output){
-    console.log(script);
-    console.log(output);
+  rebuildSolidsInWorker(script+modelJSCad,"",{},function(err,output){
+    //console.log(script);
+    if(err){
+      console.error(err);
+      return;
+    }
     buildOutput = output;
+    if(output) viewer.setCsg(mergeSolids(output));
+    if(needsUpdate) {
+      needsUpdate = false;
+      setTimeout(function(){
+        updateModel();
+      });
+    }
+    updatingModel = false;
+    console.log("model update complete");
+    onModelBuildComplete();
   },{memFs:true});
   
 }
