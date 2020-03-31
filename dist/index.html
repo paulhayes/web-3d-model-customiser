@@ -1,38 +1,59 @@
 <!DOCTYPE html>
-<head>
-  <title>Headband 3D Model Download</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
+
 <html>
   <head>
+    <title>Headband 3D Model Download</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="style.css">
   </head>
   <body>
     <script src="main.js"></script>
-    <div id="form">
-      <!-- select>
-        <option>
-          single
-        </option>
-        <option>
-          four stacked
-        </option>
-      </select -->
-      <label for="material-type">material </label><select id="material-type">
-      <option value="PET">
-        PET
-      </option>
-      <option value="PETG">
-        PETG
-      </option>
-      <option value="PLA">
-        PLA
-      </option>
-    </select>
-     <label for="name-field">name </label><input id="name-field" type="text" >
-     <input id="download-button" type="button" value="download">
-     <div class="update-model" style="visibility: hidden;">Updating Model</div>
-     <div oncontextmenu="return false;" id="viewerContainer"></div>
+
+    <main>
+      <header>
+
+      </header>
+      <h1>Customise Headband Model</h1>
+      <div id="form">
+        <!-- select>
+          <option>
+            single
+          </option>
+          <option>
+            four stacked
+          </option>
+        </select -->
+        <div class="column">
+          <div class="input-group">
+            <label for="material-type">material </label>
+            <select id="material-type">
+              <option value="PET">
+                PET
+              </option>
+              <option value="PETG">
+                PETG
+              </option>
+              <option value="PLA">
+                PLA
+              </option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="name-field">name </label><input id="name-field" type="text" >
+          </div>
+        </div>
+        <div class="column">
+          <input id="download-button" type="button" value="download">
+        </div>
+        
+      </div>
+      <div oncontextmenu="return false;" id="viewerContainer">
+        <div class="update-model" style="visibility: hidden;">Updating Model</div>
+      </div>
+      <footer>
+        Footer info here etc.
+      </footer>
+    </main>
     </div>
   </body>
 </html>
