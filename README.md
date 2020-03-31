@@ -11,6 +11,9 @@ and go to http://127.0.0.1:8080/ in your browser
 ## TODO
 
 * model selection
+* two lines for name
+* large text size option for thick layer heights
+* ability to download next 5 days of models
 * css styling
 * progress bar?
 
