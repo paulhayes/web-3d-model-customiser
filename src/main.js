@@ -154,7 +154,7 @@ function updateModel(){
 function main() { 
     let shield = (centrePoly(model())); 
 
-    let count = ${modelConfig.stackCount}; 
+    let count = ${modelConfig.count}; 
 
     let labeloutlines1 = vector_text(0,0,"${material} ${date}");
     let labelextruded1 = [];
