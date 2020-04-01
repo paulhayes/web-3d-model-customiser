@@ -11,16 +11,18 @@ const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats'
 const { generateOutputFile } = require('./generateOutputFile');
 const Viewer = require('./jscad-viewer-lightgl');
 
-
-var modelName = 'PrusaShieldRC3';  // or PrusaShieldRC3_4Stack
-var stackCount = 1; // or 4
-var modelFile = `models/${modelName}.jscad`;
-var modelJSCad;
-var hasOutputFile = false;
+var modelConfigurations = [
+  {name:"single", model:"PrusaShieldRC3", count:1, modelJSCad:null}, //"PrusaShield RC3 x1"
+  {name:"x4 stacked", model:"PrusaShieldRC3_4Stack", count:4, modelJSCad:null} //"PrusaShield RC3 x4"
+];
+var selectedModelIndex = 0;
+//var modelName = 'PrusaShieldRC3';  // or PrusaShieldRC3_4Stack
+//var stackCount = 1; // or 4
 var outputFile = null;
 var buildOutput;
 var downloadButton;
 var materialTypeDropdown;
+var modelTypeDropdown;
 var nameField;
 var viewer;
 var needsUpdate;
@@ -30,13 +32,19 @@ var updateModelMessageNodes;
 const inputTimeout = 1000;
 
 function init(){
+
   downloadButton = document.getElementById('download-button');
   nameField = document.getElementById("name-field");
   updateModelMessageNodes = document.getElementsByClassName("update-model");
   materialTypeDropdown = document.getElementById("material-type");
+  modelTypeDropdown = document.getElementById("model-type");
   //nameField.oninput = updateModel;
   nameField.oninput = function(){ lastInput=Date.now() };
   materialTypeDropdown.onchange = function(){ lastInput=Date.now()-inputTimeout };
+  modelTypeDropdown.onchange = function(){
+    selectedModelIndex = parseInt( modelTypeDropdown.value );
+    updateModel();    
+  }
   var containerdiv = document.getElementById('viewerContainer');
   var viewerdiv = document.createElement('div');
   viewerdiv.className = 'viewer'
@@ -61,17 +69,26 @@ function init(){
     return s;
   }
 
-  fetch(modelFile).then(function(response){
-    if(response.ok){
-      response.text().then(function(val){
-        modelJSCad = val;
-        updateModel();
-      });
-      
-    }else {
-      console.error(response.statusText);
-    }
-  });
+  for(let i=0;i<modelConfigurations.length;i++){
+    let modelConfig = modelConfigurations[i]
+    modelConfig.modelFile = `models/${modelConfig.model}.jscad`;
+    fetch(modelConfig.modelFile).then(function(response){
+      if(response.ok){
+        response.text().then(function(val){
+          modelConfig.modelJSCad = val;
+          updateModel();
+          let option = document.createElement("option");
+          option.innerText = modelConfig.name;
+          option.value = i;
+          modelTypeDropdown.appendChild(option);
+        });
+        
+      }else {
+        console.error(response.statusText);
+      }
+    });
+  }
+ 
   
   downloadButton.addEventListener('click',function(){
     onSaveInProgress(); 
@@ -127,17 +144,18 @@ function updateModel(){
   //const parameters = getParameterValues(this.paramControls)
   let name = nameField.value;
   if(name =="") name = "."; 
+  
   let material = materialTypeDropdown.value;
   console.log({name,material});
   let now = new Date();
   let date = now.getDate().pad(2)+"."+(now.getMonth()+1).pad(2)+"."+now.getFullYear().toString().substr(2, 2);
-
+  let modelConfig = modelConfigurations[selectedModelIndex];
 
   let script = `
 function main() { 
     let shield = (centrePoly(model())); 
 
-    let count = ${stackCount}; 
+    let count = ${modelConfig.stackCount}; 
 
     let labeloutlines1 = vector_text(0,0,"${material} ${date}");
     let labelextruded1 = [];
@@ -179,7 +197,7 @@ function centrePoly(poly) {
 }
    `;
 
-  rebuildSolidsInWorker(script+modelJSCad,"",{},function(err,output){
+  rebuildSolidsInWorker(script+modelConfig.modelJSCad,"",{},function(err,output){
     //console.log(script);
     if(err){
       console.error(err);
