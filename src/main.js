@@ -69,8 +69,7 @@ function init(){
     return s;
   }
 
-  for(let i=0;i<modelConfigurations.length;i++){
-    let modelConfig = modelConfigurations[i]
+  modelConfigurations.forEach(function(modelConfig,i){
     modelConfig.modelFile = `models/${modelConfig.model}.jscad`;
     fetch(modelConfig.modelFile).then(function(response){
       if(response.ok){
@@ -87,7 +86,7 @@ function init(){
         console.error(response.statusText);
       }
     });
-  }
+  });
  
   
   downloadButton.addEventListener('click',function(){
@@ -150,7 +149,7 @@ function updateModel(){
   let now = new Date();
   let date = now.getDate().pad(2)+"."+(now.getMonth()+1).pad(2)+"."+now.getFullYear().toString().substr(2, 2);
   let modelConfig = modelConfigurations[selectedModelIndex];
-
+  console.log(modelConfig);
   let script = `
 function main() { 
     let shield = (centrePoly(model())); 
