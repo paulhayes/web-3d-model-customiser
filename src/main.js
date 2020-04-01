@@ -12,7 +12,8 @@ const { generateOutputFile } = require('./generateOutputFile');
 const Viewer = require('./jscad-viewer-lightgl');
 
 
-var modelName = 'FaceShieldRC3Single';  
+var modelName = 'PrusaShieldRC3';  // or PrusaShieldRC3_4Stack
+var stackCount = 1; // or 4
 var modelFile = `models/${modelName}.jscad`;
 var modelJSCad;
 var hasOutputFile = false;
@@ -125,13 +126,18 @@ function updateModel(){
   onModelBuildStart();
   //const parameters = getParameterValues(this.paramControls)
   let name = nameField.value;
+  if(name =="") name = "."; 
   let material = materialTypeDropdown.value;
   console.log({name,material});
   let now = new Date();
-  let date = now.getDate().pad(2)+"."+(now.getMonth()+1).pad(2)+"."+now.getFullYear().toString().substr(2, 2);;
+  let date = now.getDate().pad(2)+"."+(now.getMonth()+1).pad(2)+"."+now.getFullYear().toString().substr(2, 2);
+
+
   let script = `
 function main() { 
-    let shield = centrePoly(FaceShieldRC3Single()); 
+    let shield = (centrePoly(model())); 
+
+    let count = ${stackCount}; 
 
     let labeloutlines1 = vector_text(0,0,"${material} ${date}");
     let labelextruded1 = [];
@@ -149,11 +155,19 @@ function main() {
     labeloutlines2.forEach(function(pl) {                   // pl = polyline (not closed)
       labelextruded2.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
     });
-    
-    let labelleft = union(labelextruded1).scale([0.15,0.15,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft,zpos]);
-    let labelright = union(labelextruded2).scale([0.15,0.15,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,zpos]);
-  
-   return shield.subtract(labelleft).subtract(labelright); 
+    let labelobject1 = union(labelextruded1);
+    let labelobject2 = union(labelextruded2);
+    let objectheight = 20.25; 
+    let zoffset = -(count-1)/2*objectheight; 
+    let labelsleft =[]; 
+    let labelsright =[]; 
+
+    for ( i =0 ;i<count;i++ ){
+      let z = zoffset + (i*objectheight) +zpos; 
+      labelsleft.push(labelobject1.scale([0.15,0.15,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft,z]));
+      labelsright.push(labelobject2.scale([0.15,0.15,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,z]));
+    }
+   return shield.subtract(labelsleft).subtract(labelsright); 
     
    
 }
