@@ -181,12 +181,13 @@ function dateStringFullYear(date){
 
 function updateModel(){
   if(updatingModel){
-    needsUpdate = true;
+    
     if(cancelUpdate){
       cancelUpdate();
       cancelUpdate = null;
     }
     else {
+      needsUpdate = true;
       return;      
     }
   }
