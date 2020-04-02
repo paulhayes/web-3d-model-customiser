@@ -12,27 +12,29 @@ const { generateOutputFile } = require('./generateOutputFile');
 const Viewer = require('./jscad-viewer-lightgl');
 const initZPad = require('./zpad');
 
-var modelConfigurations = [
-  {name:"single", model:"PrusaShieldRC3", count:1, modelJSCad:null}, //"PrusaShield RC3 x1"
-  {name:"x4 stacked", model:"PrusaShieldRC3_4Stack", count:4, modelJSCad:null} //"PrusaShield RC3 x4"
-];
-var selectedModelIndex = 0;
+var modelConfig = {
+  name:"single", 
+  model:"PrusaShieldRC3", 
+  count:1, 
+  modelJSCad:null
+}; //"PrusaShield RC3 x1";
 //var modelName = 'PrusaShieldRC3';  // or PrusaShieldRC3_4Stack
 //var stackCount = 1; // or 4
 var outputFile = null;
 var buildOutput;
 var downloadButton;
 var materialTypeDropdown;
-var modelTypeDropdown;
+var quantityField;
 var dateDropdown;
 var nameField;
 var viewer;
 var needsUpdate;
 var updatingModel;
+var cancelUpdate;
 var lastInput;
 var updateModelMessageNodes;
 var selectedDate = new Date();
-const inputTimeout = 1000;
+const inputTimeout = 200;
 
 
 
@@ -43,7 +45,7 @@ function init(){
   nameField = document.getElementById("name-field");
   updateModelMessageNodes = document.getElementsByClassName("update-model");
   materialTypeDropdown = document.getElementById("material-type");
-  modelTypeDropdown = document.getElementById("model-type");
+  quantityField = document.getElementById("stack-count");
   dateDropdown = document.getElementById("selected-date");
 
   //init 3d model viewer
@@ -66,7 +68,7 @@ function init(){
 
 
   /* init model dropdown */
-  modelConfigurations.forEach(function(modelConfig,i){
+  
     modelConfig.modelFile = `models/${modelConfig.model}.jscad`;
     fetch(modelConfig.modelFile).then(function(response){
       if(response.ok){
@@ -76,18 +78,18 @@ function init(){
           let option = document.createElement("option");
           option.innerText = modelConfig.name;
           option.value = i;
-          modelTypeDropdown.appendChild(option);
+          quantityField.appendChild(option);
         });
         
       }else {
         console.error(response.statusText);
       }
     });
-  });
+  
 
-  modelTypeDropdown.onchange = function(){
-    selectedModelIndex = parseInt( modelTypeDropdown.value );
-    updateModel();    
+  quantityField.onchange = function(){
+    modelConfig.count = parseInt( quantityField.value );
+    updateModel();  
   }
 
   /* init material dropdown */
@@ -180,7 +182,13 @@ function dateStringFullYear(date){
 function updateModel(){
   if(updatingModel){
     needsUpdate = true;
-    return;
+    if(cancelUpdate){
+      cancelUpdate();
+      cancelUpdate = null;
+    }
+    else {
+      return;      
+    }
   }
   console.log("updating model");
   updatingModel = true;
@@ -192,7 +200,6 @@ function updateModel(){
   let material = materialTypeDropdown.value;
   
   let dateStr = dateString(selectedDate);
-  let modelConfig = modelConfigurations[selectedModelIndex];
   let script = `
 function main() { 
     let shield = ((model())); 
@@ -246,7 +253,7 @@ function centrePoly(poly) {
 }
    `;
 
-  rebuildSolidsInWorker(script+modelConfig.modelJSCad,"",{},function(err,output){
+   cancelUpdate = rebuildSolidsInWorker(script+modelConfig.modelJSCad,"",{},function(err,output){
     //console.log(script);
     if(err){
       console.error(err);
@@ -261,9 +268,10 @@ function centrePoly(poly) {
       });
     }
     updatingModel = false;
+    cancelUpdate = null;
     console.log("model update complete");
     onModelBuildComplete();
-  },{memFs:true});
+  },{memFs:true}).cancel;
   
 }
 
@@ -298,8 +306,7 @@ function generateFile() {
   function onDone(data, downloadAttribute, blobMode, noData) {
     hasOutputFile = true;
     outputFile = { data, downloadAttribute, blobMode, noData };
-    let modelConfig = modelConfigurations[selectedModelIndex];
-    saveFile(outputFile.data,`${modelConfig.model}-${dateStringFullYear(selectedDate)}.stl`);
+    saveFile(outputFile.data,`${modelConfig.model}-x${modelConfig.count}-${dateStringFullYear(selectedDate)}.stl`);
     onSaveComplete();
   }
 
