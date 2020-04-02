@@ -10,6 +10,7 @@ const { convertToBlob } = require('@jscad/core/io/convertToBlob')
 const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats')
 const { generateOutputFile } = require('./generateOutputFile');
 const Viewer = require('./jscad-viewer-lightgl');
+const initZPad = require('./zpad');
 
 var modelConfigurations = [
   {name:"single", model:"PrusaShieldRC3", count:1, modelJSCad:null}, //"PrusaShield RC3 x1"
@@ -23,28 +24,29 @@ var buildOutput;
 var downloadButton;
 var materialTypeDropdown;
 var modelTypeDropdown;
+var dateDropdown;
 var nameField;
 var viewer;
 var needsUpdate;
 var updatingModel;
 var lastInput;
 var updateModelMessageNodes;
+var selectedDate = new Date();
 const inputTimeout = 1000;
 
+
+
 function init(){
+  initZPad();
 
   downloadButton = document.getElementById('download-button');
   nameField = document.getElementById("name-field");
   updateModelMessageNodes = document.getElementsByClassName("update-model");
   materialTypeDropdown = document.getElementById("material-type");
   modelTypeDropdown = document.getElementById("model-type");
-  //nameField.oninput = updateModel;
-  nameField.oninput = function(){ lastInput=Date.now() };
-  materialTypeDropdown.onchange = function(){ lastInput=Date.now()-inputTimeout };
-  modelTypeDropdown.onchange = function(){
-    selectedModelIndex = parseInt( modelTypeDropdown.value );
-    updateModel();    
-  }
+  dateDropdown = document.getElementById("selected-date");
+
+  //init 3d model viewer
   var containerdiv = document.getElementById('viewerContainer');
   var viewerdiv = document.createElement('div');
   viewerdiv.className = 'viewer'
@@ -60,15 +62,10 @@ function init(){
       draw:false
     } 
   });
-
-  setInterval(inputUpdateCheck,100);
   viewer.init();
-  Number.prototype.pad = function(size) {
-    var s = String(this);
-    while (s.length < (size || 2)) {s = "0" + s;}
-    return s;
-  }
 
+
+  /* init model dropdown */
   modelConfigurations.forEach(function(modelConfig,i){
     modelConfig.modelFile = `models/${modelConfig.model}.jscad`;
     fetch(modelConfig.modelFile).then(function(response){
@@ -87,8 +84,42 @@ function init(){
       }
     });
   });
- 
+
+  modelTypeDropdown.onchange = function(){
+    selectedModelIndex = parseInt( modelTypeDropdown.value );
+    updateModel();    
+  }
+
+  /* init material dropdown */
+  materialTypeDropdown.onchange = function(){ lastInput=Date.now()-inputTimeout };
+
+
+
+  /* init name field */
+  nameField.oninput = function(){ lastInput=Date.now() };
+  //input update check
+  setInterval(inputUpdateCheck,100);
   
+
+  /* init date dropdown */
+  let days = ["today","+1 day","","","","","",""];
+  days.forEach(function(text,offsetDays){
+    if(text===""){
+      text = `+${offsetDays} days`;
+    }
+    let option = document.createElement("option");
+    let date = new Date( Date.now() + offsetDays*24*3600*1000 );    
+    option.innerText = `${text} - ${dateString(date)}`;
+    option.value = offsetDays;
+    dateDropdown.appendChild(option);
+  });
+  dateDropdown.onchange = function(){
+    let offsetDays = parseInt( dateDropdown.value ) || 0;
+    selectedDate = new Date( Date.now() + offsetDays*24*3600*1000 ); 
+    updateModel();
+  };
+ 
+  /* init download button */
   downloadButton.addEventListener('click',function(){
     onSaveInProgress(); 
     setTimeout(function(){
@@ -96,6 +127,8 @@ function init(){
       generateFile();  
     },50);
   });
+
+
 }
 
 function inputUpdateCheck(){
@@ -131,6 +164,18 @@ function onModelBuildComplete(){
 
 }
 
+function dateString(date){
+  return date.getDate().pad(2)+"."+(date.getMonth()+1).pad(2)+"."+(date.getYear()-100).toString();
+}
+
+function dateStringBackwards(date){
+  return date.getFullYear().toString()+"."+(date.getMonth()+1).pad(2)+"."+date.getDate().pad(2);
+}
+
+function dateStringFullYear(date){
+  return date.getDate().pad(2)+"."+(date.getMonth()+1).pad(2)+"."+date.getFullYear().toString();
+}
+
 
 function updateModel(){
   if(updatingModel){
@@ -145,18 +190,16 @@ function updateModel(){
   if(name =="") name = "."; 
   
   let material = materialTypeDropdown.value;
-  console.log({name,material});
-  let now = new Date();
-  let date = now.getDate().pad(2)+"."+(now.getMonth()+1).pad(2)+"."+now.getFullYear().toString().substr(2, 2);
+  
+  let dateStr = dateString(selectedDate);
   let modelConfig = modelConfigurations[selectedModelIndex];
-  console.log(modelConfig);
   let script = `
 function main() { 
     let shield = ((model())); 
 
     let count = ${modelConfig.count}; 
 
-    let labeloutlines1 = vector_text(0,0,"${material} ${date}");
+    let labeloutlines1 = vector_text(0,0,"${material} ${dateStr}");
     let labelextruded1 = [];
     let labeloutlines2 = vector_text(0,0,"${name}");
     let labelextruded2 = [];
@@ -255,7 +298,8 @@ function generateFile() {
   function onDone(data, downloadAttribute, blobMode, noData) {
     hasOutputFile = true;
     outputFile = { data, downloadAttribute, blobMode, noData };
-    saveFile(outputFile.data,"test.stl");
+    let modelConfig = modelConfigurations[selectedModelIndex];
+    saveFile(outputFile.data,`${modelConfig.model}-${dateStringFullYear(selectedDate)}.stl`);
     onSaveComplete();
   }
 
