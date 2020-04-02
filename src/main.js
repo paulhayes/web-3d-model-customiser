@@ -152,7 +152,7 @@ function updateModel(){
   console.log(modelConfig);
   let script = `
 function main() { 
-    let shield = (centrePoly(model())); 
+    let shield = ((model())); 
 
     let count = ${modelConfig.count}; 
 
@@ -163,8 +163,8 @@ function main() {
     
     let depth=0.75;
     let xpos = 87.6-depth; 
-    let yposleft = -14; 
-    let yposright = -47; 
+    let yposleft = -4; 
+    let yposright = -37; 
     let zpos = -1.5; 
     labeloutlines1.forEach(function(pl) {                   // pl = polyline (not closed)
       labelextruded1.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
@@ -175,19 +175,26 @@ function main() {
     let labelobject1 = union(labelextruded1);
     let labelobject2 = union(labelextruded2);
     let objectheight = 20.25; 
-    let zoffset = -(count-1)/2*objectheight; 
-    let labelsleft =[]; 
-    let labelsright =[]; 
-
-    for ( i =0 ;i<count;i++ ){
-      let z = zoffset + (i*objectheight) +zpos; 
-      labelsleft.push(labelobject1.scale([0.15,0.15,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft,z]));
-      labelsright.push(labelobject2.scale([0.15,0.15,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,z]));
-    }
-   return shield.subtract(labelsleft).subtract(labelsright); 
     
-   
+    let z = zpos + objectheight/2; 
+    let labelsleft = (labelobject1.scale([0.15,0.15,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft,z]));
+    let labelsright = (labelobject2.scale([0.15,0.15,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,z]));
+
+    shield = shield.subtract(labelsleft).subtract(labelsright); 
+
+    let shields = []; 
+    for(i = 0; i<count; i++) { 
+        shields.push(shield.translate([0,0,i*objectheight]));
+        if(i>0) {
+            shields.push(supports().translate([0,0,objectheight*(i-1)]));
+        }
+        
+    }
+    if(count>1) shields.push(feet());
+    return union(shields);
+    
 }
+
 
 function centrePoly(poly) { 
     let bounds = poly.getBounds(); 
