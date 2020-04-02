@@ -6,7 +6,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build-web": "browserify src/main.js -o dist/main.js -t [babelify browserify]",
-    "serve": "npx http-server dist",
     "start-dev": "budo src/main.js --dir dist --port=8080 --live -- src/main.js -o dist/main.js -t [babelify browserify]"
   },
   "author": "",
