@@ -80,6 +80,13 @@ h1, h2, h3, p {
   background: #999;
 }
 
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button {  
+
+   opacity: 1;
+
+}
+
 #viewerContainer {
   width: 900px;
   max-width: 100vw;

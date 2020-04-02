@@ -196,7 +196,7 @@ function updateModel(){
   onModelBuildStart();
   //const parameters = getParameterValues(this.paramControls)
   let name = nameField.value;
-  if(name =="") name = "."; 
+  if(name === "") name = "."; 
   
   let material = materialTypeDropdown.value;
   
