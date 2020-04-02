@@ -56,7 +56,8 @@ function init(){
   viewerdiv.style.height = '100%'
   containerdiv.appendChild(viewerdiv);
   viewer = new Viewer(viewerdiv,{
-    camera:{"position":{"x":-11.963978423799869,"y":30.454086159474876,"z":176.7626167126004},"angle":{"x":-64.79999999999998,"y":1.6000000000000003,"z":-59.39999999999999}},
+   // 3jscad-viewer-lightgl.js:298 {"position":{"x":16.850816779459187,"y":10.79013653116062,"z":192.0986346883937},"angle":{"x":-67.79999999999998,"y":1.6000000000000003,"z":65}}
+    camera:{"position":{"x":16,"y":11,"z":192},"angle":{"x":-68,"y":1.6,"z":65}},
     plate:{
       draw:false,
     },
