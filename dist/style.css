@@ -38,7 +38,6 @@ h1, h2, h3, p {
   flex-wrap: wrap;
   width: 100%;
   align-items: center;
-  justify-content: center;
 }
 
 #form .column {
