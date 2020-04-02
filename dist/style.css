@@ -46,8 +46,8 @@ h1, h2, h3, p {
   margin: 1rem;
 }
 
-.input-group {
-  margin-bottom: 1rem;
+.input-group + .input-group {
+  margin-top: 1rem;
 }
 
 .input-group label {
