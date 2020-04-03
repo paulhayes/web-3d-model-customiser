@@ -24,7 +24,6 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* justify-content: center; */
 }
 
 h1, h2, h3, p {
@@ -39,7 +38,6 @@ h1, h2, h3, p {
   flex-wrap: wrap;
   width: 100%;
   align-items: center;
-  justify-content: center;
 }
 
 #form .column {
@@ -47,8 +45,8 @@ h1, h2, h3, p {
   margin: 1rem;
 }
 
-.input-group {
-  margin-bottom: 1rem;
+.input-group + .input-group {
+  margin-top: 1rem;
 }
 
 .input-group label {
@@ -85,6 +83,13 @@ input[type=number]::-webkit-outer-spin-button {
 
    opacity: 1;
 
+}
+
+.input-group input,
+.input-group select {
+  min-width: 250px;
+  margin: 0;
+  padding: 0.25em;
 }
 
 #viewerContainer {

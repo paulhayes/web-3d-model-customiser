@@ -10,17 +10,18 @@
     <script src="main.js"></script>
 
     <main>
-      <header>
 
-      </header>
       <h1>Prusa Face Shield RC3 Customiser</h1>
       <div id="form">
-        
+
+        <!-- Left hand column -->
         <div class="column">
+
           <div class="input-group">
-              <label for="stack-count">quantity </label>
-              <input id="stack-count" type="number" min="1" max="8" value="1">                        
-            </div>
+            <label for="stack-count">quantity </label>
+            <input id="stack-count" type="number" min="1" max="8" value="1">
+          </div>
+
           <div class="input-group">
             <label for="material-type">material </label>
             <select id="material-type">
@@ -38,23 +39,26 @@
               </option>
             </select>
           </div>
-          
+
           <div class="input-group">
-            <label for="name-field">name </label><input id="name-field" type="text" >
+            <label for="name-field">name </label>
+            <input id="name-field" type="text" >
           </div>
+
           <div class="input-group">
             <label for="selected-date">date </label>
             <select id="selected-date">
-              
             </select>
           </div>
         </div>
-        
+
+        <!-- Right hand column -->
         <div class="column">
           <input id="download-button" type="button" value="download">
         </div>
-        
+
       </div>
+      <!-- 3D model preview -->
       <div oncontextmenu="return false;" id="viewerContainer">
         <div class="update-model" style="visibility: hidden;">Updating Model</div>
       </div>
