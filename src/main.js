@@ -16,7 +16,8 @@ var modelConfig = {
   name:"single", 
   model:"PrusaShieldRC3", 
   count:1, 
-  modelJSCad:null
+  modelJSCad:null,
+  addDate:true
 }; //"PrusaShield RC3 x1";
 //var modelName = 'PrusaShieldRC3';  // or PrusaShieldRC3_4Stack
 //var stackCount = 1; // or 4
@@ -26,6 +27,7 @@ var downloadButton;
 var materialTypeDropdown;
 var quantityField;
 var dateDropdown;
+var addDateCheckbox; 
 var nameField;
 var viewer;
 var needsUpdate;
@@ -47,7 +49,7 @@ function init(){
   materialTypeDropdown = document.getElementById("material-type");
   quantityField = document.getElementById("stack-count");
   dateDropdown = document.getElementById("selected-date");
-
+  addDateCheckbox = document.getElementById("add-date"); 
   //init 3d model viewer
   var containerdiv = document.getElementById('viewerContainer');
   var viewerdiv = document.createElement('div');
@@ -91,6 +93,11 @@ function init(){
   quantityField.onchange = function(){
     modelConfig.count = parseInt( quantityField.value );
     updateModel();  
+  }
+  addDateCheckbox.onchange = function(){
+    modelConfig.addDate = addDateCheckbox.checked;
+    updateModel();  
+    console.log(modelConfig, addDateCheckbox.checked);
   }
 
   /* init material dropdown */
@@ -164,6 +171,8 @@ function onModelBuildComplete(){
     updateModelMessageNodes[i].style.visibility = "hidden";
   }
   downloadButton.disabled = false;  
+  viewer.viewpointY = 11 - ((modelConfig.count*20.25)*0.5); 
+  viewer.onDraw();
 
 }
 
@@ -197,7 +206,7 @@ function updateModel(){
   onModelBuildStart();
   //const parameters = getParameterValues(this.paramControls)
   let name = nameField.value;
-  if(name === "") name = "."; 
+  //if(name == "") name = "."; 
   
   let material = materialTypeDropdown.value;
   
@@ -232,7 +241,18 @@ function main() {
     let labelsleft = (labelobject1.scale([0.15,0.15,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft,z]));
     let labelsright = (labelobject2.scale([0.15,0.15,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,z]));
 
-    shield = shield.subtract(labelsleft).subtract(labelsright); 
+    let subtractobject = cube(0); // is there a better way to create an empty object? 
+    let issubtractobjectempty = true; 
+    if(name!="") {
+      subtractobject = subtractobject.union(labelsright); 
+      issubtractobjectempty = false; 
+    }
+    if(${modelConfig.addDate}) {
+      subtractobject = subtractobject.union(labelsleft); 
+      issubtractobjectempty = false; 
+    }
+
+    if(!issubtractobjectempty) shield = shield.subtract(subtractobject); 
 
     let shields = []; 
     for(i = 0; i<count; i++) { 
