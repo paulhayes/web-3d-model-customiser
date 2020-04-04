@@ -1,5 +1,7 @@
 # 3d model customiser
 
+Currently published to https://mod.seblee.me/
+
 ## Usage
 
 ```npm install```
