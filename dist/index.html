@@ -19,7 +19,7 @@
 
           <div class="input-group">
             <label for="stack-count">quantity </label>
-            <input id="stack-count" type="number" min="1" max="8" value="1">
+            <input id="stack-count" type="number" min="1" max="25" value="1">
           </div>
 
           <div class="input-group">
@@ -32,10 +32,10 @@
                 PLA
               </option>
               <option value="ABS">
-                ABS
+                ABS*
               </option>
               <option value="HIPS">
-                HIPS
+                HIPS*
               </option>
             </select>
           </div>
@@ -50,6 +50,11 @@
             <select id="selected-date">
             </select>
           </div>
+          <div class="input-group">
+            <label for="add-date">add date and material</label>
+            <input type="checkbox" id="add-date" checked>
+            
+          </div>
         </div>
 
         <!-- Right hand column -->
@@ -58,13 +63,19 @@
         </div>
 
       </div>
+
       <!-- 3D model preview -->
       <div oncontextmenu="return false;" id="viewerContainer">
         <div class="update-model" style="visibility: hidden;">Updating Model</div>
       </div>
       <footer>
         <p />
-        You can add a date, material type and your name to the <a href="https://www.prusaprinters.org/prints/25857/files">Prusa Face Shield RC3</a> 3D model. 
+        This tool can add the date, material type and your name to the <a href="https://www.prusaprinters.org/prints/25857/files">Prusa Face Shield RC3</a> 3D model. 
+
+        <p><em>*Note - currently only PETG and PLA are recommended for use in the <a href="http://3dcrowd.uk">3DCrowd.UK</a> project</em>
+        <p />
+        Suggestions or problems? Create an issue on <a href="https://github.com/paulhayes/web-3d-model-customiser">our github page</a>
+        
         <p />
         With much love for <a href="https://www.prusa3d.com/covid19/">Prusa</a>, customiser built by <a href="https://github.com/paulhayes">Paul Hayes</a> and <a href="http://twitter.com/seb_ly">Seb Lee-Delisle</a>. Styling by <a href="https://github.com/orangetronic">Orangetronic</a>. 
       </footer>
