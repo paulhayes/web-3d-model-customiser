@@ -251,12 +251,12 @@ LightGLEngine.prototype = {
     const baseInteractions = baseInteractionsFromEvents(element)
     const gestures = pointerGestures(baseInteractions)
 
-    const rotateFactor = 0.4
+    const rotateFactor = 0.16; //0.4
     const panFactor = 0.005
-    const zoomFactor = 1.085
+    const zoomFactor = 0.15; // 1.085
 
     gestures.drags
-      .throttle(20)
+      .throttle(5)
       .forEach(function (data) {
         const {delta, originalEvents} = data
 
@@ -271,7 +271,7 @@ LightGLEngine.prototype = {
           _this.viewpointX -= panFactor * delta.x * _this.viewpointZ
           _this.viewpointY -= panFactor * delta.y * _this.viewpointZ
         } else if (ctrlKey || metaKey) {                   // ZOOM IN/OUT
-          let zoom = (-delta.x + delta.y) * 10 * zoomFactor // arbitrary
+          let zoom = (-delta.x + delta.y) * 10 * t // arbitrary
           const coeff = (_this.viewpointZ - _this.options.camera.clip.min) / (_this.options.camera.clip.max - _this.options.camera.clip.min)
           zoom *= coeff
           _this.viewpointZ += zoom
@@ -302,7 +302,7 @@ LightGLEngine.prototype = {
       })
 
     gestures.zooms
-      .throttle(20)
+      .throttle(5)
       .forEach(function (zoom) {
         //console.log(`zoom ${_this.options.camera.clip.min} ${_this.options.camera.clip.max}`);
         const coeff = (_this.viewpointZ - _this.options.camera.clip.min) / (_this.options.camera.clip.max - _this.options.camera.clip.min)
