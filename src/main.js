@@ -216,10 +216,10 @@ function main() {
     let shield = ((model())); 
 
     let count = ${modelConfig.count}; 
-
+    let name = "${name}";
     let labeloutlines1 = vector_text(0,0,"${material} ${dateStr}");
     let labelextruded1 = [];
-    let labeloutlines2 = vector_text(0,0,"${name}");
+    let labeloutlines2 = vector_text(0,0,name);
     let labelextruded2 = [];
     
     let depth=0.75;
@@ -276,7 +276,7 @@ function centrePoly(poly) {
    `;
 
    cancelUpdate = rebuildSolidsInWorker(script+modelConfig.modelJSCad,"",{},function(err,output){
-    //console.log(script);
+    console.log(script);
     if(err){
       console.error(err);
       return;
