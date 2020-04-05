@@ -252,8 +252,8 @@ LightGLEngine.prototype = {
     const gestures = pointerGestures(baseInteractions)
 
     const rotateFactor = 0.16; //0.4
-    const panFactor = 0.005
-    const zoomFactor = 0.15; // 1.085
+    const panFactor = 0.005;
+    const zoomFactor = 0.35; // 1.085
 
     gestures.drags
       .throttle(5)

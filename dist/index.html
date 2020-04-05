@@ -23,6 +23,11 @@
           </div>
 
           <div class="input-group">
+            <label for="name-field">name </label>
+            <input id="name-field" type="text" >
+          </div>
+
+          <div class="input-group">
             <label for="material-type">material </label>
             <select id="material-type">
               <option value="PETG">
@@ -39,22 +44,40 @@
               </option>
             </select>
           </div>
-
-          <div class="input-group">
-            <label for="name-field">name </label>
-            <input id="name-field" type="text" >
-          </div>
-
           <div class="input-group">
             <label for="selected-date">date </label>
             <select id="selected-date">
             </select>
           </div>
+          
           <div class="input-group">
-            <label for="add-date">add date and material</label>
-            <input type="checkbox" id="add-date" checked>
-            
+            <label for="add-material">add material</label>
+            <input type="checkbox" id="add-material" checked>
           </div>
+
+          <div class="input-group">
+            <label for="add-date">add date</label>
+            <input type="checkbox" id="add-date" checked>
+          </div>
+          <div class="input-group">
+            <label for="add-mouse-ears">add mouse ears (for bed adhesion)</label>
+            <input type="checkbox" id="add-mouse-ears" >
+          </div>
+          <div class="input-group">
+             <label for="selected-quality">Refinement (higher = slower and more triangles)</label>
+            <select id="selected-quality">
+              <option value="low">
+                Low
+              </option>
+              <option value="medium">
+                Medium
+              </option>
+              <option value="high">
+                High
+              </option>
+            </select>
+          </div>
+
         </div>
 
         <!-- Right hand column -->

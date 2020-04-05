@@ -15,9 +15,14 @@ const initZPad = require('./zpad');
 var modelConfig = {
   name:"single", 
   model:"PrusaShieldRC3", 
+  quality : "low",
+  materialType:"PETG",
   count:1, 
   modelJSCad:null,
-  addDate:true
+  extrasJSCad:null,
+  addDate:true,
+  addMaterial:true, 
+  addMouseEars:false
 }; //"PrusaShield RC3 x1";
 //var modelName = 'PrusaShieldRC3';  // or PrusaShieldRC3_4Stack
 //var stackCount = 1; // or 4
@@ -50,6 +55,9 @@ function init(){
   quantityField = document.getElementById("stack-count");
   dateDropdown = document.getElementById("selected-date");
   addDateCheckbox = document.getElementById("add-date"); 
+  addMaterialCheckbox = document.getElementById("add-material"); 
+  addMouseEarsCheckbox = document.getElementById("add-mouse-ears"); 
+  qualityDropdown = document.getElementById("selected-quality");
   //init 3d model viewer
   var containerdiv = document.getElementById('viewerContainer');
   var viewerdiv = document.createElement('div');
@@ -71,23 +79,8 @@ function init(){
 
 
   /* init model dropdown */
-  
-    modelConfig.modelFile = `models/${modelConfig.model}.jscad`;
-    fetch(modelConfig.modelFile).then(function(response){
-      if(response.ok){
-        response.text().then(function(val){
-          modelConfig.modelJSCad = val;
-          updateModel();
-          let option = document.createElement("option");
-          option.innerText = modelConfig.name;
-          option.value = i;
-          quantityField.appendChild(option);
-        });
-        
-      }else {
-        console.error(response.statusText);
-      }
-    });
+  reloadModel(); 
+    
   
 
   quantityField.onchange = function(){
@@ -97,13 +90,27 @@ function init(){
   addDateCheckbox.onchange = function(){
     modelConfig.addDate = addDateCheckbox.checked;
     updateModel();  
-    console.log(modelConfig, addDateCheckbox.checked);
   }
-
+  addMaterialCheckbox.onchange = function(){
+    modelConfig.addMaterial = addMaterialCheckbox.checked;
+    updateModel();  
+  }
+  addMouseEarsCheckbox.onchange = function(){
+    modelConfig.addMouseEars = addMouseEarsCheckbox.checked;
+    updateModel();  
+  }
+  qualityDropdown.onchange = function(){
+    console.log("qualityDropdown.onchange"); 
+    modelConfig.quality = qualityDropdown.value; 
+    //modelConfig.modelFile = `models/${modelConfig.model}.jscad`;
+    reloadModel(); 
+    updateModel();  
+  }
   /* init material dropdown */
-  materialTypeDropdown.onchange = function(){ lastInput=Date.now()-inputTimeout };
-
-
+  materialTypeDropdown.onchange = function(){ 
+    modelConfig.materialType = materialTypeDropdown.value; 
+    lastInput=Date.now()-inputTimeout; 
+  };
 
   /* init name field */
   nameField.oninput = function(){ lastInput=Date.now() };
@@ -138,6 +145,45 @@ function init(){
     },50);
   });
 
+
+}
+
+function reloadModel() { 
+
+  modelConfig.modelFile = `models/${modelConfig.model}_${modelConfig.quality}.jscad`;
+  
+  fetch(modelConfig.modelFile).then(function(response){
+
+    if(response.ok){
+      response.text().then(function(val){
+        modelConfig.modelJSCad = val;
+        updateModel();
+
+      });
+      
+    }else {
+      console.error(response.statusText);
+    }
+  });
+
+  if(modelConfig.extrasJSCad == null) { 
+
+    console.log("loading extras");
+    fetch('models/extras.jscad').then(function(response){
+
+      if(response.ok){
+        response.text().then(function(val){
+          modelConfig.extrasJSCad = val;
+          updateModel();
+        
+        });
+        
+      } else {
+        console.error(response.statusText);
+      }
+    });
+
+  }
 
 }
 
@@ -206,25 +252,33 @@ function updateModel(){
   onModelBuildStart();
   //const parameters = getParameterValues(this.paramControls)
   let name = nameField.value;
+  let dateStr = dateString(selectedDate);
+  let labellefttext = ""; 
+  if(modelConfig.addMaterial) labellefttext = modelConfig.materialType+" ";
+  if(modelConfig.addDate) labellefttext = labellefttext + dateStr;  
+
   //if(name == "") name = "."; 
   
-  let material = materialTypeDropdown.value;
   
-  let dateStr = dateString(selectedDate);
+  
   let script = `
 function main() { 
     let shield = ((model())); 
 
     let count = ${modelConfig.count}; 
     let name = "${name}";
-    let labeloutlines1 = vector_text(0,0,"${material} ${dateStr}");
+    let labellefttext = "${labellefttext}";
+    let labeloutlines1 = vector_text(0,0,labellefttext);
     let labelextruded1 = [];
     let labeloutlines2 = vector_text(0,0,name);
     let labelextruded2 = [];
+    let adddate = ${modelConfig.addDate}; 
+    let addmaterial = ${modelConfig.addMaterial}; 
+    let addmouseears = ${modelConfig.addMouseEars};
     
     let depth=0.75;
     let xpos = 87.6-depth; 
-    let yposleft = -4; 
+    let yposleft = -38;//-4; 
     let yposright = -37; 
     let zpos = -1.5; 
     labeloutlines1.forEach(function(pl) {                   // pl = polyline (not closed)
@@ -238,7 +292,8 @@ function main() {
     let objectheight = 20.25; 
     
     let z = zpos + objectheight/2; 
-    let labelsleft = (labelobject1.scale([0.15,0.15,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft,z]));
+    let leftbounds = labelobject1.scale([0.15,0.15,1]).getBounds(); 
+    let labelsleft = (labelobject1.scale([0.15,0.15,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft+leftbounds[1].x,z]));
     let labelsright = (labelobject2.scale([0.15,0.15,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,z]));
 
     let subtractobject = cube(0); // is there a better way to create an empty object? 
@@ -247,12 +302,14 @@ function main() {
       subtractobject = subtractobject.union(labelsright); 
       issubtractobjectempty = false; 
     }
-    if(${modelConfig.addDate}) {
+    if(labellefttext!="") {
       subtractobject = subtractobject.union(labelsleft); 
       issubtractobjectempty = false; 
     }
 
-    if(!issubtractobjectempty) shield = shield.subtract(subtractobject); 
+    if(!issubtractobjectempty) {
+      shield = shield.subtract(subtractobject); 
+    }
 
     let shields = []; 
     for(i = 0; i<count; i++) { 
@@ -263,6 +320,7 @@ function main() {
         
     }
     if(count>1) shields.push(feet());
+    if(addmouseears) shields.push(mouseEars());
     return union(shields);
     
 }
@@ -275,7 +333,7 @@ function centrePoly(poly) {
 }
    `;
 
-   cancelUpdate = rebuildSolidsInWorker(script+modelConfig.modelJSCad,"",{},function(err,output){
+   cancelUpdate = rebuildSolidsInWorker(script+modelConfig.modelJSCad+modelConfig.extrasJSCad,"",{},function(err,output){
     console.log(script);
     if(err){
       console.error(err);
