@@ -89,10 +89,12 @@ function init(){
   }
   addDateCheckbox.onchange = function(){
     modelConfig.addDate = addDateCheckbox.checked;
+    dateDropdown.disabled = !addDateCheckbox.checked;
     updateModel();  
   }
   addMaterialCheckbox.onchange = function(){
     modelConfig.addMaterial = addMaterialCheckbox.checked;
+    materialTypeDropdown.disabled = !addMaterialCheckbox.checked;
     updateModel();  
   }
   addMouseEarsCheckbox.onchange = function(){
