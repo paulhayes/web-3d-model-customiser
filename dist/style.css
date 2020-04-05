@@ -85,12 +85,26 @@ input[type=number]::-webkit-outer-spin-button {
 
 }
 
-.input-group input,
+.input-group input[type="number"],
+.input-group input[type="text"],
 .input-group select {
   min-width: 250px;
   margin: 0;
   padding: 0.25em;
 }
+
+.input-group input[type=checkbox] {
+  margin-right: 0.5rem;
+}
+
+.input-group input[type=checkbox] + input[type="number"],
+.input-group input[type=checkbox] + input[type="text"],
+.input-group input[type=checkbox] + select {
+  min-width: 225px;
+  margin: 0;
+  padding: 0.25em;
+}
+
 
 #viewerContainer {
   width: 900px;
