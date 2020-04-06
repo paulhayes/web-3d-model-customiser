@@ -2,15 +2,13 @@ const getParameterDefinitions = require('@jscad/core/parameters/getParameterDefi
 const getParameterValues = require('@jscad/core/parameters/getParameterValuesFromUIControls')
 const { rebuildSolids, rebuildSolidsInWorker } = require('@jscad/core/code-evaluation/rebuildSolids')
 const { mergeSolids } = require('@jscad/core/utils/mergeSolids')
+const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats')
 
 // output handling
-//const { generateOutputFile } = require('../io/generateOutputFile')
-const { prepareOutput } = require('@jscad/core/io/prepareOutput')
-const { convertToBlob } = require('@jscad/core/io/convertToBlob')
-const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats')
-const { generateOutputFile } = require('./generateOutputFile');
+const { outputFile } = require('./output-file');
 const Viewer = require('./jscad-viewer-lightgl');
 const initZPad = require('./zpad');
+const work = require('webworkify');
 
 var modelConfig = {
   name:"single", 
@@ -26,7 +24,6 @@ var modelConfig = {
 }; //"PrusaShield RC3 x1";
 //var modelName = 'PrusaShieldRC3';  // or PrusaShieldRC3_4Stack
 //var stackCount = 1; // or 4
-var outputFile = null;
 var buildOutput;
 var downloadButton;
 var materialTypeDropdown;
@@ -141,14 +138,16 @@ function init(){
   /* init download button */
   downloadButton.addEventListener('click',function(){
     onSaveInProgress(); 
-    setTimeout(function(){
-           
-      generateFile();  
-    },50);
+    let generateFileWorker = work(require("./file-generator"));
+    generateFileWorker.addEventListener("message",onFileCreated);
+    generateFileWorker.postMessage({cmd:"generate-stl",objects:buildOutput});
+    
   });
 
 
 }
+
+
 
 function reloadModel() { 
 
@@ -237,7 +236,7 @@ function dateStringFullYear(date){
 }
 
 
-function updateModel(){
+const updateModel = function(){
   if(updatingModel){
     
     if(cancelUpdate){
@@ -360,7 +359,18 @@ function centrePoly(poly) {
   
 }
 
-var saveFile = (function () {
+const onFileCreated = function(){
+  let onDone = function(data, downloadAttribute, blobMode, noData) {
+    hasOutputFile = true;
+    //let outputFile = { data, downloadAttribute, blobMode, noData };
+    saveFile(data,`${modelConfig.model}-x${modelConfig.count}-${dateStringFullYear(selectedDate)}.stl`);
+    onSaveComplete();
+  }
+
+  outputFile("stl", blob, onDone, null);  
+}
+
+const saveFile = (function () {
   var a = document.createElement("a");
   document.body.appendChild(a);
   a.style = "display: none";
@@ -375,28 +385,7 @@ var saveFile = (function () {
   };
 }());
 
-function generateFile() {
-  let objects = buildOutput;
-  console.log('generating file');
-  let outputFormat = {
-    displayName: 'STL (Binary)',
-    description: 'STereoLithography, Binary',
-    extension: 'stl',
-    mimetype: 'application/sla',
-    convertCSG: true,
-    convertCAG: false
-  };
-  const blob = convertToBlob(prepareOutput(objects, { format: outputFormat.extension }));
 
-  function onDone(data, downloadAttribute, blobMode, noData) {
-    hasOutputFile = true;
-    outputFile = { data, downloadAttribute, blobMode, noData };
-    saveFile(outputFile.data,`${modelConfig.model}-x${modelConfig.count}-${dateStringFullYear(selectedDate)}.stl`);
-    onSaveComplete();
-  }
-
-  generateOutputFile("stl", blob, onDone, null);  
-}
 
 document.addEventListener('DOMContentLoaded', function (event) {
   init();
