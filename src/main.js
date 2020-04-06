@@ -1,8 +1,9 @@
-const getParameterDefinitions = require('@jscad/core/parameters/getParameterDefinitions')
-const getParameterValues = require('@jscad/core/parameters/getParameterValuesFromUIControls')
-const { rebuildSolids, rebuildSolidsInWorker } = require('@jscad/core/code-evaluation/rebuildSolids')
-const { mergeSolids } = require('@jscad/core/utils/mergeSolids')
-const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats')
+const getParameterDefinitions = require('@jscad/core/parameters/getParameterDefinitions');
+const getParameterValues = require('@jscad/core/parameters/getParameterValuesFromUIControls');
+const { rebuildSolids, rebuildSolidsInWorker } = require('@jscad/core/code-evaluation/rebuildSolids');
+const { mergeSolids } = require('@jscad/core/utils/mergeSolids');
+const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats');
+const { convertToBlob } = require('@jscad/core/io/convertToBlob');
 
 // output handling
 const { outputFile } = require('./output-file');
@@ -36,7 +37,9 @@ var needsUpdate;
 var updatingModel;
 var cancelUpdate;
 var lastInput;
-var updateModelMessageNodes;
+var updateOverlayNodes;
+var updateOverlayMessage;
+var updateOverlayProgress;
 var selectedDate = new Date();
 const inputTimeout = 200;
 
@@ -47,8 +50,10 @@ function init(){
 
   downloadButton = document.getElementById('download-button');
   nameField = document.getElementById("name-field");
-  updateModelMessageNodes = document.getElementsByClassName("update-model");
-  materialTypeDropdown = document.getElementById("material-type");
+  updateOverlayNodes = document.getElementsByClassName("update-overlay");
+  updateOverlayMessage = document.querySelector(".update-overlay .update-message");
+  updateOverlayProgress =  document.querySelector(".update-overlay .update-progress");
+  materialTypeDropdown = document.getElementById("material-type");  
   quantityField = document.getElementById("stack-count");
   dateDropdown = document.getElementById("selected-date");
   addDateCheckbox = document.getElementById("add-date"); 
@@ -139,8 +144,8 @@ function init(){
   downloadButton.addEventListener('click',function(){
     onSaveInProgress(); 
     let generateFileWorker = work(require("./file-generator"));
-    generateFileWorker.addEventListener("message",onFileCreated);
-    generateFileWorker.postMessage({cmd:"generate-stl",objects:buildOutput});
+    generateFileWorker.addEventListener("message",onMessageFromFileWorker);
+    generateFileWorker.postMessage({cmd:"generate-stl",objects:buildOutput[0].toCompactBinary()});
     
   });
 
@@ -200,23 +205,30 @@ function inputUpdateCheck(){
 
 function onSaveInProgress(){
   downloadButton.disabled = true;
+  updateOverlayMessage.innerText = "Creating 3d model file";
+  updateOverlayProgress.value = 0;
+  Array.prototype.forEach.call(updateOverlayNodes,(n)=>{ n.style.visibility = "visible" });
 }
 
 function onSaveComplete(){
   downloadButton.disabled = false;  
+  Array.prototype.forEach.call(updateOverlayNodes,(n)=>{ n.style.visibility = "hidden" });
 }
 
 function onModelBuildStart(){
   downloadButton.disabled = true;
-  for (i = 0; i < updateModelMessageNodes.length; i++) {
-    updateModelMessageNodes[i].style.visibility = "visible";
-  }
+  Array.prototype.forEach.call(updateOverlayNodes,(n)=>{ n.style.visibility = "visible" });
+  updateOverlayMessage.innerText = "Updating Model";
+  updateOverlayProgress.removeAttribute("value");
 }
 
 function onModelBuildComplete(){
-  for (i = 0; i < updateModelMessageNodes.length; i++) {
-    updateModelMessageNodes[i].style.visibility = "hidden";
+  Array.prototype.forEach.call(updateOverlayNodes,(n)=>{ n.style.visibility = "hidden" });
+  /*
+  for (i = 0; i < updateOverlayNodes.length; i++) {
+    updateOverlayNodes[i].style.visibility = "hidden";
   }
+  */
   downloadButton.disabled = false;  
   viewer.viewpointY = 11 - ((modelConfig.count*20.25)*0.5); 
   viewer.onDraw();
@@ -359,15 +371,36 @@ function centrePoly(poly) {
   
 }
 
-const onFileCreated = function(){
+const onMessageFromFileWorker = function(evt){
+  if(evt.data.cmd === "status"){
+    onFileProgress(evt);
+  }
+  else if( evt.data.cmd === "complete" ){
+    onFileCreated(evt);
+  }
+  else {
+    console.error(`unknown worker message ${evt.data.cmd}`);
+  }
+}
+
+const onFileProgress = function(evt){
+  //console.log(evt.data);
+  updateOverlayProgress.value = evt.data.progress;
+}
+
+const onFileCreated = function(evt){
   let onDone = function(data, downloadAttribute, blobMode, noData) {
     hasOutputFile = true;
     //let outputFile = { data, downloadAttribute, blobMode, noData };
     saveFile(data,`${modelConfig.model}-x${modelConfig.count}-${dateStringFullYear(selectedDate)}.stl`);
     onSaveComplete();
   }
-
-  outputFile("stl", blob, onDone, null);  
+  let { fileData, ext } = evt.data;
+  console.log(evt.data);
+  fileData = convertToBlob(fileData);
+ 
+  console.log("returned file is blob?",fileData instanceof Blob);
+  outputFile(ext, fileData, onDone, null);  
 }
 
 const saveFile = (function () {

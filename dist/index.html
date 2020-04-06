@@ -85,7 +85,10 @@
 
       <!-- 3D model preview -->
       <div oncontextmenu="return false;" id="viewerContainer">
-        <div class="update-model" style="visibility: hidden;">Updating Model</div>
+        <div class="update-overlay" style="visibility: hidden;">
+          <div class="update-message">Updating Model</div>
+          <progress class="update-progress" max="100" value="0"></progress>
+        </div>
       </div>
       <footer>
         <p />
