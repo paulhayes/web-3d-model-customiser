@@ -54,7 +54,7 @@ h1, h2, h3, p {
   min-width: 70px;
 }
 
-.update-model {
+.update-overlay {
   position: absolute;
   background: yellow;
   padding: 1rem;
