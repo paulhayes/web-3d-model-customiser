@@ -65,7 +65,7 @@ function generateOutputFileBlobUrl (extension, blob, callback) {
 }
 
 
-function generateOutputFile (extension, blob, onDone, context, filename) {
+function outputFile (extension, blob, onDone, context, filename) {
   try {
     generateOutputFileFileSystem(extension, blob, onDone.bind(context), filename)
   } catch (e) {
@@ -74,5 +74,5 @@ function generateOutputFile (extension, blob, onDone, context, filename) {
 }
 
 module.exports = {
-  generateOutputFile
+  outputFile
 }

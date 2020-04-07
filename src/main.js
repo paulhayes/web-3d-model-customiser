@@ -1,16 +1,15 @@
-const getParameterDefinitions = require('@jscad/core/parameters/getParameterDefinitions')
-const getParameterValues = require('@jscad/core/parameters/getParameterValuesFromUIControls')
-const { rebuildSolids, rebuildSolidsInWorker } = require('@jscad/core/code-evaluation/rebuildSolids')
-const { mergeSolids } = require('@jscad/core/utils/mergeSolids')
+const getParameterDefinitions = require('@jscad/core/parameters/getParameterDefinitions');
+const getParameterValues = require('@jscad/core/parameters/getParameterValuesFromUIControls');
+const { rebuildSolids, rebuildSolidsInWorker } = require('@jscad/core/code-evaluation/rebuildSolids');
+const { mergeSolids } = require('@jscad/core/utils/mergeSolids');
+const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats');
+const { convertToBlob } = require('@jscad/core/io/convertToBlob');
 
 // output handling
-//const { generateOutputFile } = require('../io/generateOutputFile')
-const { prepareOutput } = require('@jscad/core/io/prepareOutput')
-const { convertToBlob } = require('@jscad/core/io/convertToBlob')
-const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats')
-const { generateOutputFile } = require('./generateOutputFile');
+const { outputFile } = require('./output-file');
 const Viewer = require('./jscad-viewer-lightgl');
 const initZPad = require('./zpad');
+const work = require('webworkify');
 
 var modelConfig = {
   name:"single", 
@@ -26,7 +25,6 @@ var modelConfig = {
 }; //"PrusaShield RC3 x1";
 //var modelName = 'PrusaShieldRC3';  // or PrusaShieldRC3_4Stack
 //var stackCount = 1; // or 4
-var outputFile = null;
 var buildOutput;
 var downloadButton;
 var materialTypeDropdown;
@@ -39,7 +37,9 @@ var needsUpdate;
 var updatingModel;
 var cancelUpdate;
 var lastInput;
-var updateModelMessageNodes;
+var updateOverlayNodes;
+var updateOverlayMessage;
+var updateOverlayProgress;
 var selectedDate = new Date();
 const inputTimeout = 200;
 
@@ -50,8 +50,10 @@ function init(){
 
   downloadButton = document.getElementById('download-button');
   nameField = document.getElementById("name-field");
-  updateModelMessageNodes = document.getElementsByClassName("update-model");
-  materialTypeDropdown = document.getElementById("material-type");
+  updateOverlayNodes = document.getElementsByClassName("update-overlay");
+  updateOverlayMessage = document.querySelector(".update-overlay .update-message");
+  updateOverlayProgress =  document.querySelector(".update-overlay .update-progress");
+  materialTypeDropdown = document.getElementById("material-type");  
   quantityField = document.getElementById("stack-count");
   dateDropdown = document.getElementById("selected-date");
   addDateCheckbox = document.getElementById("add-date"); 
@@ -141,14 +143,16 @@ function init(){
   /* init download button */
   downloadButton.addEventListener('click',function(){
     onSaveInProgress(); 
-    setTimeout(function(){
-           
-      generateFile();  
-    },50);
+    let generateFileWorker = work(require("./file-generator"));
+    generateFileWorker.addEventListener("message",onMessageFromFileWorker);
+    generateFileWorker.postMessage({cmd:"generate-stl",objects:buildOutput[0].toCompactBinary()});
+    
   });
 
 
 }
+
+
 
 function reloadModel() { 
 
@@ -201,23 +205,30 @@ function inputUpdateCheck(){
 
 function onSaveInProgress(){
   downloadButton.disabled = true;
+  updateOverlayMessage.innerText = "Creating 3d model file";
+  updateOverlayProgress.value = 0;
+  Array.prototype.forEach.call(updateOverlayNodes,(n)=>{ n.style.visibility = "visible" });
 }
 
 function onSaveComplete(){
   downloadButton.disabled = false;  
+  Array.prototype.forEach.call(updateOverlayNodes,(n)=>{ n.style.visibility = "hidden" });
 }
 
 function onModelBuildStart(){
   downloadButton.disabled = true;
-  for (i = 0; i < updateModelMessageNodes.length; i++) {
-    updateModelMessageNodes[i].style.visibility = "visible";
-  }
+  Array.prototype.forEach.call(updateOverlayNodes,(n)=>{ n.style.visibility = "visible" });
+  updateOverlayMessage.innerText = "Updating Model";
+  updateOverlayProgress.removeAttribute("value");
 }
 
 function onModelBuildComplete(){
-  for (i = 0; i < updateModelMessageNodes.length; i++) {
-    updateModelMessageNodes[i].style.visibility = "hidden";
+  Array.prototype.forEach.call(updateOverlayNodes,(n)=>{ n.style.visibility = "hidden" });
+  /*
+  for (i = 0; i < updateOverlayNodes.length; i++) {
+    updateOverlayNodes[i].style.visibility = "hidden";
   }
+  */
   downloadButton.disabled = false;  
   viewer.viewpointY = 11 - ((modelConfig.count*20.25)*0.5); 
   viewer.onDraw();
@@ -237,7 +248,7 @@ function dateStringFullYear(date){
 }
 
 
-function updateModel(){
+const updateModel = function(){
   if(updatingModel){
     
     if(cancelUpdate){
@@ -360,7 +371,39 @@ function centrePoly(poly) {
   
 }
 
-var saveFile = (function () {
+const onMessageFromFileWorker = function(evt){
+  if(evt.data.cmd === "status"){
+    onFileProgress(evt);
+  }
+  else if( evt.data.cmd === "complete" ){
+    onFileCreated(evt);
+  }
+  else {
+    console.error(`unknown worker message ${evt.data.cmd}`);
+  }
+}
+
+const onFileProgress = function(evt){
+  //console.log(evt.data);
+  updateOverlayProgress.value = evt.data.progress;
+}
+
+const onFileCreated = function(evt){
+  let onDone = function(data, downloadAttribute, blobMode, noData) {
+    hasOutputFile = true;
+    //let outputFile = { data, downloadAttribute, blobMode, noData };
+    saveFile(data,`${modelConfig.model}-x${modelConfig.count}-${dateStringFullYear(selectedDate)}.stl`);
+    onSaveComplete();
+  }
+  let { fileData, ext } = evt.data;
+  console.log(evt.data);
+  fileData = convertToBlob(fileData);
+ 
+  console.log("returned file is blob?",fileData instanceof Blob);
+  outputFile(ext, fileData, onDone, null);  
+}
+
+const saveFile = (function () {
   var a = document.createElement("a");
   document.body.appendChild(a);
   a.style = "display: none";
@@ -375,28 +418,7 @@ var saveFile = (function () {
   };
 }());
 
-function generateFile() {
-  let objects = buildOutput;
-  console.log('generating file');
-  let outputFormat = {
-    displayName: 'STL (Binary)',
-    description: 'STereoLithography, Binary',
-    extension: 'stl',
-    mimetype: 'application/sla',
-    convertCSG: true,
-    convertCAG: false
-  };
-  const blob = convertToBlob(prepareOutput(objects, { format: outputFormat.extension }));
 
-  function onDone(data, downloadAttribute, blobMode, noData) {
-    hasOutputFile = true;
-    outputFile = { data, downloadAttribute, blobMode, noData };
-    saveFile(outputFile.data,`${modelConfig.model}-x${modelConfig.count}-${dateStringFullYear(selectedDate)}.stl`);
-    onSaveComplete();
-  }
-
-  generateOutputFile("stl", blob, onDone, null);  
-}
 
 document.addEventListener('DOMContentLoaded', function (event) {
   init();
