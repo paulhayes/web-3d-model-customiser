@@ -57,12 +57,72 @@ h1, h2, h3, p {
 .update-overlay {
   position: absolute;
   background: yellow;
-  padding: 1rem;
+  padding-top: 1rem;
+
   color: black;
   z-index: 10;
   top: calc(50% - 2rem);
   width: 100%;
 }
+
+.update-overlay progress {
+    /* Reset the default appearance */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100%;
+    margin-top: 1rem;
+    background: none;
+    border: none;
+}
+
+.update-overlay progress[value]::-webkit-progress-bar {
+  background: none;
+}
+
+/*
+
+I would ideally write the following two rules as 
+
+.update-overlay progress[value]::-webkit-progress-value,
+.update-overlay progress[value]::-moz-progress-bar {
+  ...etc
+}
+
+but this seems to break things in safari.
+
+*/
+
+.update-overlay progress[value]::-webkit-progress-value { 
+  background: orangered;
+}
+
+.update-overlay progress[value]::-moz-progress-bar {
+  background: orangered;
+}
+
+.update-overlay progress:indeterminate {
+  opacity: 0;
+  display: none;
+  visibility: hidden;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0); }
+  50% { transform: rotate(180deg) scale(1.5);}
+  100% { transform: rotate(360deg); }
+}
+
+.update-overlay progress + .spinner {
+  display: none;
+}
+
+.update-overlay progress:indeterminate ~ .spinner {
+  display: block;
+  animation: spin infinite 1s linear;
+  margin: 1rem;
+}
+
 
 #form input[type="button"] {
   display: block;
