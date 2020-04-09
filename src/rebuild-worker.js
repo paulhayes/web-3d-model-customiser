@@ -15,7 +15,7 @@ const uncompactModels = function (models){
 module.exports = function(self){
   self.addEventListener("message",function(evt){
       let cmd = evt.data.cmd;
-      console.log(evt.data.cmd);
+      
       if(cmd === "build"){
         let modelConfig = uncompactModels(evt.data.modelConfig);
         let statusCallback = function(data){
