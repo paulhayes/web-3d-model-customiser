@@ -1,8 +1,4 @@
-const getParameterDefinitions = require('@jscad/core/parameters/getParameterDefinitions');
-const getParameterValues = require('@jscad/core/parameters/getParameterValuesFromUIControls');
-const { rebuildSolids, rebuildSolidsInWorker } = require('@jscad/core/code-evaluation/rebuildSolids');
-const { mergeSolids } = require('@jscad/core/utils/mergeSolids');
-const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats');
+
 const { convertToBlob } = require('@jscad/core/io/convertToBlob');
 const { CSG, CAG } = require('@jscad/csg');
 
@@ -23,9 +19,8 @@ var modelConfig = {
   addDate:true,
   addMaterial:true, 
   addMouseEars:false
-}; //"PrusaShield RC3 x1";
-//var modelName = 'PrusaShieldRC3';  // or PrusaShieldRC3_4Stack
-//var stackCount = 1; // or 4
+}; 
+
 var buildOutput;
 var downloadButton;
 var materialTypeDropdown;
@@ -42,8 +37,6 @@ var updateOverlayMessage;
 var updateOverlayProgress;
 var selectedDate = new Date();
 const inputTimeout = 200;
-
-
 
 function init(){
   initZPad();
@@ -79,11 +72,8 @@ function init(){
   });
   viewer.init();
 
-
   /* init model dropdown */
   reloadModel(); 
-    
-  
 
   quantityField.onchange = function(){
     modelConfig.count = parseInt( quantityField.value );
@@ -145,7 +135,7 @@ function init(){
     onSaveInProgress(); 
     let generateFileWorker = work(require("./file-generator"));
     generateFileWorker.addEventListener("message",onMessageFromFileWorker);
-    generateFileWorker.postMessage({cmd:"generate-stl",objects:buildOutput[0].toCompactBinary()});
+    generateFileWorker.postMessage({cmd:"generate-stl",objects:buildOutput.toCompactBinary()});
     
   });
 
@@ -159,7 +149,7 @@ function reloadModel() {
   loadFileWorker.postMessage({cmd:"load-stl",name:"model",url:new URL(modelConfig.modelFile, window.location.origin).toString()});
   
   if(!modelConfig.extrasModelsLoadedl) { 
-    console.log("loading extras");      
+    //console.log("loading extras");      
     loadFileWorker.postMessage({cmd:"load-stl",name:"feet",url:new URL("models/Feet.stl", window.location.origin).toString()});
     loadFileWorker.postMessage({cmd:"load-stl",name:"supports",url:new URL("models/Supports.stl", window.location.origin).toString()});
     loadFileWorker.postMessage({cmd:"load-stl",name:"mouseEars",url:new URL("models/mouseEars.stl", window.location.origin).toString()});  
