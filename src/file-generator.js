@@ -35,6 +35,7 @@ module.exports = function(self){
         if(cmd === "generate-stl"){
             let buildOutput = [CSG.fromCompactBinary(evt.data.objects)];
             console.log(buildOutput);
+            
             let onStatus = function(data){
               self.postMessage({"cmd":"status","progress":data.progress});
             }

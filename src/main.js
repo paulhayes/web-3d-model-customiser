@@ -34,7 +34,6 @@ var dateDropdown;
 var addDateCheckbox; 
 var nameField;
 var viewer;
-var needsUpdate;
 var updatingModel;
 var cancelUpdate;
 var lastInput;
@@ -224,18 +223,19 @@ function dateStringFullYear(date){
 }
 
 const updateModel = function(){
-  if(!modelConfig.model){
-    console.error("can't update no model file");
+  const modelNames = ["model","feet","supports","mouseEars"];
+  
+  if( !modelNames.every(name=>!!modelConfig[name]) ){
     return;
   }
   if(updatingModel){
-    
     if(cancelUpdate){
+      if(typeof(cancelUpdate)!=="function")
+        console.log("unexpected type for cancelUpdate",typeof(cancelUpdate));
       cancelUpdate();
       cancelUpdate = null;
     }
     else {
-      needsUpdate = true;
       return;      
     }
   }
@@ -243,37 +243,27 @@ const updateModel = function(){
   updatingModel = true;
   onModelBuildStart();
   //const parameters = getParameterValues(this.paramControls)
-  let name = modelConfig.name = nameField.value;
-  let dateStr = modelConfig.dateStr = dateString(selectedDate);
+  modelConfig.name = nameField.value;
+  let dateStr = dateString(selectedDate);
   let labellefttext = ""; 
   if(modelConfig.addMaterial) labellefttext = modelConfig.materialType+" ";
   if(modelConfig.addDate) labellefttext = labellefttext + dateStr;  
   modelConfig.labellefttext = labellefttext;
   
-  console.log("rendering");
-  buildOutput = require('./build-visor')(modelConfig);
+  let buildWorker = work(require("./rebuild-worker"));
+  buildWorker.addEventListener("message",onMessageFromBuilder);
+  buildWorker.postMessage({cmd:"build",name:"model",modelConfig});
+  cancelUpdate  = ()=>buildWorker.terminate();
 
-  viewer.setCsg(mergeSolids(buildOutput));
-  if(needsUpdate) {
-    needsUpdate = false;
-    setTimeout(function(){
-      updateModel();
-    });
-  }
-  updatingModel = false;
-  cancelUpdate = null;
-  console.log("model update complete");
-  onModelBuildComplete();
-  
 }
 
-const onMessageFromFileLoader = function(evt){
-  console.log(`Received ${evt.data.cmd} message from File loader`)
-
+const onMessageFromFileLoader = function(evt){  
   if(evt.data.cmd === "status"){
   }
   else if( evt.data.cmd === "complete" ){
-    modelConfig[evt.data.name] = CSG.fromCompactBinary( evt.data.data );
+    // no need to uncompact, going staight to another worker
+    //modelConfig[evt.data.name] =  CSG.fromCompactBinary( evt.data.data );
+    modelConfig[evt.data.name] = evt.data.data ;
     updateModel();
   }
   else {
@@ -282,8 +272,9 @@ const onMessageFromFileLoader = function(evt){
 }
 
 const onMessageFromFileWorker = function(evt){
+  
   if(evt.data.cmd === "status"){
-    onFileProgress(evt);
+    onProgress(evt);
   }
   else if( evt.data.cmd === "complete" ){
     onFileCreated(evt);
@@ -293,7 +284,7 @@ const onMessageFromFileWorker = function(evt){
   }
 }
 
-const onFileProgress = function(evt){
+const onProgress = function(evt){
   //console.log(evt.data);
   updateOverlayProgress.value = evt.data.progress;
 }
@@ -311,6 +302,24 @@ const onFileCreated = function(evt){
  
   console.log("returned file is blob?",fileData instanceof Blob);
   outputFile(ext, fileData, onDone, null);  
+}
+
+const onMessageFromBuilder = function(evt){
+  let cmd = evt.data.cmd;
+  if(cmd === "status"){
+    onProgress(evt);
+  }
+  else if(cmd === "complete"){
+    buildOutput = CSG.fromCompactBinary( evt.data.data );
+    //doesn't need to mergeSolids, union is called at the end anyway
+    //viewer.setCsg(mergeSolids(buildOutput));
+    viewer.setCsg(buildOutput);
+    
+    updatingModel = false;
+    cancelUpdate = null;
+    console.log("model update complete");
+    onModelBuildComplete();
+  }
 }
 
 const saveFile = (function () {

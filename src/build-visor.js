@@ -4,7 +4,10 @@ const { vector_text } = require("@jscad/csg/src/api/text");
 const { CSG } = require("@jscad/csg/api").csg;
 
 function main(params) { 
-    console.log(params.model);
+    if(params.statusCallback){
+      params.statusCallback({progress:0});
+    }
+
     shield = params.model;
     let count = params.count; 
     let name = params.name;
@@ -29,6 +32,10 @@ function main(params) {
     labeloutlines2.forEach(function(pl) {                   // pl = polyline (not closed)
       labelextruded2.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
     });
+    if(params.statusCallback){
+      params.statusCallback({progress:10});
+    }
+
     let labelobject1 = union(labelextruded1);
     let labelobject2 = union(labelextruded2);
     let objectheight = 20.25; 
@@ -37,6 +44,11 @@ function main(params) {
     let leftbounds = labelobject1.scale([textscaleX,textscaleY,1]).getBounds(); 
     let labelsleft = (labelobject1.scale([textscaleX,textscaleY,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft+leftbounds[1].x,z]));
     let labelsright = (labelobject2.scale([textscaleX,textscaleY,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,z]));
+
+    if(params.statusCallback){
+      params.statusCallback({progress:10});
+    }
+
 
     let subtractobject = new CSG(); 
     let issubtractobjectempty = true; 
@@ -53,17 +65,36 @@ function main(params) {
       shield = shield.subtract(subtractobject); 
     }
 
-    let shields = []; 
-    for(i = 0; i<count; i++) { 
-        shields.push(shield.translate([0,0,i*objectheight]));
-        if(i>0) {
-            shields.push(params.supports.translate([0,0,objectheight*(i-1)]));
-        }
-        
+    if(params.statusCallback){
+      params.statusCallback({progress:20});
     }
-    if(count>1) shields.push(params.feet);
-    if(addmouseears) shields.push(params.mouseEars);
-    return union(shields);
+
+
+    let parts = []; 
+    for(i = 0; i<count; i++) { 
+        parts.push(shield.translate([0,0,i*objectheight]));
+        if(i>0) {
+            parts.push(params.supports.translate([0,0,objectheight*(i-1)]));
+        }
+                    
+    }
+    if(count>1) parts.push(params.feet);
+    if(addmouseears) parts.push(params.mouseEars);
+
+    let partsUnion = parts[0];
+    for(let i=1;i<parts.length;i++){
+      
+      partsUnion = partsUnion.union(parts[i]);
+      if(params.statusCallback){
+        params.statusCallback({progress:20+70*i/parts.length});
+      }  
+    }
+
+    if(params.statusCallback){
+      params.statusCallback({progress:100});
+    }
+
+    return partsUnion;
     
 }
 
