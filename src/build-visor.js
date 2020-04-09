@@ -57,14 +57,12 @@ function main(params) {
     for(i = 0; i<count; i++) { 
         shields.push(shield.translate([0,0,i*objectheight]));
         if(i>0) {
-            shields.push(supports().translate([0,0,objectheight*(i-1)]));
+            shields.push(params.supports.translate([0,0,objectheight*(i-1)]));
         }
         
     }
-    if(count>1) shields.push(feet());
-    if(addmouseears) shields.push(mouseEars());
-    console.log(shields);
-    console.log("meep");
+    if(count>1) shields.push(params.feet);
+    if(addmouseears) shields.push(params.mouseEars);
     return union(shields);
     
 }
