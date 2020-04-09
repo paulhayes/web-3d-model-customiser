@@ -14,12 +14,12 @@ const work = require('webworkify');
 
 var modelConfig = {
   name:"single", 
-  model:"PrusaHeadBandRC3", 
+  modelName:"PrusaHeadBandRC3", 
   quality : "low",
   materialType:"PETG",
   count:1, 
-  modelJSCad:null,
-  extrasJSCad:null,
+  model:null,
+  extrasModel:null,
   addDate:true,
   addMaterial:true, 
   addMouseEars:false
@@ -157,10 +157,10 @@ function init(){
 
 function reloadModel() { 
 
-  modelConfig.modelFile = `models/${modelConfig.model}_${modelConfig.quality}.stl`;
+  modelConfig.modelFile = `models/${modelConfig.modelName}_${modelConfig.quality}.stl`;
   let loadFileWorker = work(require("./file-loader"));
   loadFileWorker.addEventListener("message",onMessageFromFileLoader);
-  loadFileWorker.postMessage({cmd:"load-stl",name:"modelJSCad",url:new URL(modelConfig.modelFile, window.location.origin).toString()});
+  loadFileWorker.postMessage({cmd:"load-stl",name:"model",url:new URL(modelConfig.modelFile, window.location.origin).toString()});
   /*
   fetch(modelConfig.modelFile).then(function(response){
 
@@ -177,14 +177,14 @@ function reloadModel() {
   });
   */
 
-  if(modelConfig.extrasJSCad == null) { 
+  if(modelConfig.extrasModel == null) { 
 
     console.log("loading extras");
     fetch('models/extras.jscad').then(function(response){
 
       if(response.ok){
         response.text().then(function(val){
-          modelConfig.extrasJSCad = val;
+          modelConfig.extrasModel = val;
           updateModel();
         
         });
@@ -252,12 +252,9 @@ function dateStringFullYear(date){
   return date.getDate().pad(2)+"."+(date.getMonth()+1).pad(2)+"."+date.getFullYear().toString();
 }
 
-function model(){
-  return modelConfig.modelJSCad;
-}
 
 const updateModel = function(){
-  if(!modelConfig.modelJSCad){
+  if(!modelConfig.model){
     console.error("can't update no model file");
     return;
   }
@@ -276,12 +273,12 @@ const updateModel = function(){
   updatingModel = true;
   onModelBuildStart();
   //const parameters = getParameterValues(this.paramControls)
-  let name = nameField.value;
-  let dateStr = dateString(selectedDate);
+  let name = modelConfig.name = nameField.value;
+  let dateStr = modelConfig.dateStr = dateString(selectedDate);
   let labellefttext = ""; 
   if(modelConfig.addMaterial) labellefttext = modelConfig.materialType+" ";
   if(modelConfig.addDate) labellefttext = labellefttext + dateStr;  
-
+  modelConfig.labellefttext = labellefttext;
   //if(name == "") name = "."; 
   
   
@@ -384,8 +381,10 @@ function centrePoly(poly) {
     onModelBuildComplete();
   },{memFs:true}).cancel;
   */
+  console.log("rendering");
+  buildOutput = require('./render-visor')(modelConfig);
 
-  viewer.setCsg(mergeSolids(modelConfig.modelJSCad));
+  viewer.setCsg(mergeSolids(buildOutput));
   if(needsUpdate) {
     needsUpdate = false;
     setTimeout(function(){
@@ -434,7 +433,7 @@ const onFileCreated = function(evt){
   let onDone = function(data, downloadAttribute, blobMode, noData) {
     hasOutputFile = true;
     //let outputFile = { data, downloadAttribute, blobMode, noData };
-    saveFile(data,`${modelConfig.model}-x${modelConfig.count}-${dateStringFullYear(selectedDate)}.stl`);
+    saveFile(data,`${modelConfig.modelName}-x${modelConfig.count}-${dateStringFullYear(selectedDate)}.stl`);
     onSaveComplete();
   }
   let { fileData, ext } = evt.data;

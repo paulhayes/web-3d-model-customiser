@@ -1,20 +1,19 @@
-const { union } = require('./ops-booleans');
+const { union } = require("@jscad/csg/src/api/ops-booleans");
+const { rectangular_extrude } = require("@jscad/csg/src/api/ops-extrusions");
+const { vector_text } = require("@jscad/csg/src/api/text");
+const { CSG } = require("@jscad/csg/api").csg;
 
 function main(params) { 
     console.log(params.model);
-    let shield = cube([100,100,100]); //params.model; 
-    console.log(shield);
     shield = params.model;
     let count = params.count; 
     let name = params.name;
-    let labellefttext = "${labellefttext}";
+    let labellefttext = params.labellefttext;
     let labeloutlines1 = vector_text(0,0,labellefttext);
     let labelextruded1 = [];
     let labeloutlines2 = vector_text(0,0,name);
     let labelextruded2 = [];
-    let adddate = ${modelConfig.addDate}; 
-    let addmaterial = ${modelConfig.addMaterial}; 
-    let addmouseears = ${modelConfig.addMouseEars};
+    let addmouseears = params.addMouseEars;
     
     let depth=0.75;
     let xpos = 87.6-depth; 
@@ -39,7 +38,7 @@ function main(params) {
     let labelsleft = (labelobject1.scale([textscaleX,textscaleY,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft+leftbounds[1].x,z]));
     let labelsright = (labelobject2.scale([textscaleX,textscaleY,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,z]));
 
-    let subtractobject = cube(0); // is there a better way to create an empty object? 
+    let subtractobject = new CSG(); 
     let issubtractobjectempty = true; 
     if(name!="") {
       subtractobject = subtractobject.union(labelsright); 
@@ -64,6 +63,8 @@ function main(params) {
     }
     if(count>1) shields.push(feet());
     if(addmouseears) shields.push(mouseEars());
+    console.log(shields);
+    console.log("meep");
     return union(shields);
     
 }
@@ -75,3 +76,5 @@ function centrePoly(poly) {
     return poly.translate([centre.x, centre.y, centre.z]);
 }
   
+
+module.exports = main;
