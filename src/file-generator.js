@@ -5,7 +5,7 @@ const stlSerializer = require('./CSGToStlb'); //originally @jscad/stl-serializer
 const { CSG, CAG } = require('@jscad/csg');
 const {mergeSolids2} = require('@jscad/core/utils/mergeSolids');
 
-function generateStl(buildOutput, onStatus) {
+const generateStl = function (buildOutput, onStatus) {
     console.log('generating file');
     let outputFormat = {
       displayName: 'STL (Binary)',

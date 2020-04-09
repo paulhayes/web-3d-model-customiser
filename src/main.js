@@ -4,6 +4,7 @@ const { rebuildSolids, rebuildSolidsInWorker } = require('@jscad/core/code-evalu
 const { mergeSolids } = require('@jscad/core/utils/mergeSolids');
 const { formats, supportedFormatsForObjects } = require('@jscad/core/io/formats');
 const { convertToBlob } = require('@jscad/core/io/convertToBlob');
+const { CSG, CAG } = require('@jscad/csg');
 
 // output handling
 const { outputFile } = require('./output-file');
@@ -13,7 +14,7 @@ const work = require('webworkify');
 
 var modelConfig = {
   name:"single", 
-  model:"PrusaShieldRC3", 
+  model:"PrusaHeadBandRC3", 
   quality : "low",
   materialType:"PETG",
   count:1, 
@@ -156,8 +157,11 @@ function init(){
 
 function reloadModel() { 
 
-  modelConfig.modelFile = `models/${modelConfig.model}_${modelConfig.quality}.jscad`;
-  
+  modelConfig.modelFile = `models/${modelConfig.model}_${modelConfig.quality}.stl`;
+  let loadFileWorker = work(require("./file-loader"));
+  loadFileWorker.addEventListener("message",onMessageFromFileLoader);
+  loadFileWorker.postMessage({cmd:"load-stl",name:"modelJSCad",url:new URL(modelConfig.modelFile, window.location.origin).toString()});
+  /*
   fetch(modelConfig.modelFile).then(function(response){
 
     if(response.ok){
@@ -171,6 +175,7 @@ function reloadModel() {
       console.error(response.statusText);
     }
   });
+  */
 
   if(modelConfig.extrasJSCad == null) { 
 
@@ -247,8 +252,15 @@ function dateStringFullYear(date){
   return date.getDate().pad(2)+"."+(date.getMonth()+1).pad(2)+"."+date.getFullYear().toString();
 }
 
+function model(){
+  return modelConfig.modelJSCad;
+}
 
 const updateModel = function(){
+  if(!modelConfig.modelJSCad){
+    console.error("can't update no model file");
+    return;
+  }
   if(updatingModel){
     
     if(cancelUpdate){
@@ -275,9 +287,11 @@ const updateModel = function(){
   
   
   let script = `
-function main() { 
-    let shield = ((model())); 
-
+function main(params) { 
+    console.log(params.model);
+    let shield = cube([100,100,100]); //params.model; 
+    console.log(shield);
+    shield = params.model;
     let count = ${modelConfig.count}; 
     let name = "${name}";
     let labellefttext = "${labellefttext}";
@@ -349,8 +363,9 @@ function centrePoly(poly) {
 }
    `;
 
-   cancelUpdate = rebuildSolidsInWorker(script+modelConfig.modelJSCad+modelConfig.extrasJSCad,"",{},function(err,output){
-    console.log(script);
+   /*
+   cancelUpdate = rebuildSolids(script+modelConfig.extrasJSCad,"",{ model:modelConfig.modelJSCad },function(err,output){
+    console.log("rebuild complete");
     if(err){
       console.error(err);
       return;
@@ -368,7 +383,34 @@ function centrePoly(poly) {
     console.log("model update complete");
     onModelBuildComplete();
   },{memFs:true}).cancel;
+  */
+
+  viewer.setCsg(mergeSolids(modelConfig.modelJSCad));
+  if(needsUpdate) {
+    needsUpdate = false;
+    setTimeout(function(){
+      updateModel();
+    });
+  }
+  updatingModel = false;
+  cancelUpdate = null;
+  console.log("model update complete");
+  onModelBuildComplete();
   
+}
+
+const onMessageFromFileLoader = function(evt){
+  console.log(`Received ${evt.data.cmd} message from File loader`)
+
+  if(evt.data.cmd === "status"){
+  }
+  else if( evt.data.cmd === "complete" ){
+    modelConfig[evt.data.name] = CSG.fromCompactBinary( evt.data.data );
+    updateModel();
+  }
+  else {
+    console.error(`unknown worker message ${evt.data.cmd}`);
+  }
 }
 
 const onMessageFromFileWorker = function(evt){
