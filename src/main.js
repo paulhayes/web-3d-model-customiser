@@ -19,7 +19,7 @@ var modelConfig = {
   materialType:"PETG",
   count:1, 
   model:null,
-  extrasModel:null,
+  extrasModelsLoaded:null,
   addDate:true,
   addMaterial:true, 
   addMouseEars:false
@@ -150,10 +150,7 @@ function init(){
     
   });
 
-
 }
-
-
 
 function reloadModel() { 
 
@@ -161,39 +158,13 @@ function reloadModel() {
   let loadFileWorker = work(require("./file-loader"));
   loadFileWorker.addEventListener("message",onMessageFromFileLoader);
   loadFileWorker.postMessage({cmd:"load-stl",name:"model",url:new URL(modelConfig.modelFile, window.location.origin).toString()});
-  /*
-  fetch(modelConfig.modelFile).then(function(response){
-
-    if(response.ok){
-      response.text().then(function(val){
-        modelConfig.modelJSCad = val;
-        updateModel();
-
-      });
-      
-    }else {
-      console.error(response.statusText);
-    }
-  });
-  */
-
-  if(modelConfig.extrasModel == null) { 
-
-    console.log("loading extras");
-    fetch('models/extras.jscad').then(function(response){
-
-      if(response.ok){
-        response.text().then(function(val){
-          modelConfig.extrasModel = val;
-          updateModel();
-        
-        });
-        
-      } else {
-        console.error(response.statusText);
-      }
-    });
-
+  
+  if(!modelConfig.extrasModelsLoadedl) { 
+    console.log("loading extras");      
+    loadFileWorker.postMessage({cmd:"load-stl",name:"feet",url:new URL("models/Feet.stl", window.location.origin).toString()});
+    loadFileWorker.postMessage({cmd:"load-stl",name:"supports",url:new URL("models/Supports.stl", window.location.origin).toString()});
+    loadFileWorker.postMessage({cmd:"load-stl",name:"mouseEars",url:new URL("models/mouseEars.stl", window.location.origin).toString()});  
+    modelConfig.extrasModelsLoaded = true;
   }
 
 }
@@ -252,7 +223,6 @@ function dateStringFullYear(date){
   return date.getDate().pad(2)+"."+(date.getMonth()+1).pad(2)+"."+date.getFullYear().toString();
 }
 
-
 const updateModel = function(){
   if(!modelConfig.model){
     console.error("can't update no model file");
@@ -279,110 +249,9 @@ const updateModel = function(){
   if(modelConfig.addMaterial) labellefttext = modelConfig.materialType+" ";
   if(modelConfig.addDate) labellefttext = labellefttext + dateStr;  
   modelConfig.labellefttext = labellefttext;
-  //if(name == "") name = "."; 
   
-  
-  
-  let script = `
-function main(params) { 
-    console.log(params.model);
-    let shield = cube([100,100,100]); //params.model; 
-    console.log(shield);
-    shield = params.model;
-    let count = ${modelConfig.count}; 
-    let name = "${name}";
-    let labellefttext = "${labellefttext}";
-    let labeloutlines1 = vector_text(0,0,labellefttext);
-    let labelextruded1 = [];
-    let labeloutlines2 = vector_text(0,0,name);
-    let labelextruded2 = [];
-    let adddate = ${modelConfig.addDate}; 
-    let addmaterial = ${modelConfig.addMaterial}; 
-    let addmouseears = ${modelConfig.addMouseEars};
-    
-    let depth=0.75;
-    let xpos = 87.6-depth; 
-    let yposleft = -38;//-4; 
-    let yposright = -39; 
-    let zpos = -2; 
-    let textscaleY = 0.19; 
-    let textscaleX = 0.15; 
-
-    labeloutlines1.forEach(function(pl) {                   // pl = polyline (not closed)
-      labelextruded1.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
-    });
-    labeloutlines2.forEach(function(pl) {                   // pl = polyline (not closed)
-      labelextruded2.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
-    });
-    let labelobject1 = union(labelextruded1);
-    let labelobject2 = union(labelextruded2);
-    let objectheight = 20.25; 
-    
-    let z = zpos + objectheight/2; 
-    let leftbounds = labelobject1.scale([textscaleX,textscaleY,1]).getBounds(); 
-    let labelsleft = (labelobject1.scale([textscaleX,textscaleY,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft+leftbounds[1].x,z]));
-    let labelsright = (labelobject2.scale([textscaleX,textscaleY,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,z]));
-
-    let subtractobject = cube(0); // is there a better way to create an empty object? 
-    let issubtractobjectempty = true; 
-    if(name!="") {
-      subtractobject = subtractobject.union(labelsright); 
-      issubtractobjectempty = false; 
-    }
-    if(labellefttext!="") {
-      subtractobject = subtractobject.union(labelsleft); 
-      issubtractobjectempty = false; 
-    }
-
-    if(!issubtractobjectempty) {
-      shield = shield.subtract(subtractobject); 
-    }
-
-    let shields = []; 
-    for(i = 0; i<count; i++) { 
-        shields.push(shield.translate([0,0,i*objectheight]));
-        if(i>0) {
-            shields.push(supports().translate([0,0,objectheight*(i-1)]));
-        }
-        
-    }
-    if(count>1) shields.push(feet());
-    if(addmouseears) shields.push(mouseEars());
-    return union(shields);
-    
-}
-
-
-function centrePoly(poly) { 
-    let bounds = poly.getBounds(); 
-    let centre = bounds[1].plus(bounds[0]).scale(-0.5);
-    return poly.translate([centre.x, centre.y, centre.z]);
-}
-   `;
-
-   /*
-   cancelUpdate = rebuildSolids(script+modelConfig.extrasJSCad,"",{ model:modelConfig.modelJSCad },function(err,output){
-    console.log("rebuild complete");
-    if(err){
-      console.error(err);
-      return;
-    }
-    buildOutput = output;
-    if(output) viewer.setCsg(mergeSolids(output));
-    if(needsUpdate) {
-      needsUpdate = false;
-      setTimeout(function(){
-        updateModel();
-      });
-    }
-    updatingModel = false;
-    cancelUpdate = null;
-    console.log("model update complete");
-    onModelBuildComplete();
-  },{memFs:true}).cancel;
-  */
   console.log("rendering");
-  buildOutput = require('./render-visor')(modelConfig);
+  buildOutput = require('./build-visor')(modelConfig);
 
   viewer.setCsg(mergeSolids(buildOutput));
   if(needsUpdate) {
