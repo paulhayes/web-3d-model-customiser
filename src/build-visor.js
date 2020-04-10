@@ -7,7 +7,7 @@ function main(params) {
     if(params.statusCallback){
       params.statusCallback({progress:0});
     }
-
+    console.log(params);
     shield = params.model;
     let count = params.count; 
     let name = params.name;
@@ -17,6 +17,11 @@ function main(params) {
     let labeloutlines2 = vector_text(0,0,name);
     let labelextruded2 = [];
     let addmouseears = params.addMouseEars;
+    
+    let layerheight = 0.25; 
+    let objectheight = 20 + layerheight; 
+    
+    let cutouts = params.cutOuts.scale([1,1,0.5]);
     
     let depth=0.75;
     let xpos = 87.6-depth; 
@@ -38,7 +43,6 @@ function main(params) {
 
     let labelobject1 = union(labelextruded1);
     let labelobject2 = union(labelextruded2);
-    let objectheight = 20.25; 
     
     let z = zpos + objectheight/2; 
     let leftbounds = labelobject1.scale([textscaleX,textscaleY,1]).getBounds(); 
@@ -72,13 +76,18 @@ function main(params) {
 
     let parts = []; 
     for(i = 0; i<count; i++) { 
-        parts.push(shield.translate([0,0,i*objectheight]));
+        let shieldtranslated = (shield.translate([0,0,i*objectheight]));
+
         if(i>0) {
+            
+            parts.push(shieldtranslated.subtract(cutouts.translate([0,0,objectheight*i]))); 
             parts.push(params.supports.translate([0,0,objectheight*(i-1)]));
-        }
+        } else { 
+            parts.push(shieldtranslated); 
+        } 
                     
     }
-    if(count>1) parts.push(params.feet);
+    if(count>2) parts.push(params.feet);
     if(addmouseears) parts.push(params.mouseEars);
 
     let partsUnion = parts[0];
