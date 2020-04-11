@@ -23,11 +23,6 @@ var modelConfig = {
 
 var buildOutput;
 var downloadButton;
-var materialTypeDropdown;
-var quantityField;
-var dateDropdown;
-var addDateCheckbox; 
-var nameField;
 var viewer;
 var updatingModel;
 var cancelUpdate;
@@ -48,7 +43,6 @@ const formElementsIds = {
   addMouseEarsCheckbox:"add-mouse-ears",
   qualityDropdown:"selected-quality"
 }
-
 var formElements = {};
 
 function init(){
@@ -101,18 +95,7 @@ function init(){
   }
 
   /* init date dropdown */
-  let days = ["today","+1 day","","","","","",""];
-  days.forEach(function(text,offsetDays){
-    if(text===""){
-      text = `+${offsetDays} days`;
-    }
-    let option = document.createElement("option");
-    let date = new Date( Date.now() + offsetDays*24*3600*1000 );    
-    option.innerText = `${text} - ${dateString(date)}`;
-    option.value = offsetDays;
-    formElements.dateDropdown.appendChild(option);
-  });
-  
+  initDate();  
   
   //formElements.dateDropdown.onchange = function(){
   //  updateModel();
@@ -132,6 +115,27 @@ function init(){
   updateUI();
   reloadModel(); 
   setInterval(inputUpdateCheck,100);
+}
+
+function initDate(){
+  let selectedOffset = parseInt( formElements.dateDropdown.value ) || 0;
+  let days = ["today","+1 day","","","","","",""];
+  while(formElements.dateDropdown.firstElementChild)
+    formElements.dateDropdown.removeChild(formElements.dateDropdown.lastElementChild);
+
+  days.forEach(function(text,offsetDays){
+    if(text===""){
+      text = `+${offsetDays} days`;
+    }
+    let option = document.createElement("option");
+    let date = new Date( Date.now() + offsetDays*24*3600*1000 );    
+    option.innerText = `${text} - ${dateString(date)}`;
+    option.value = offsetDays;
+    if(offsetDays===selectedOffset)
+      option.setAttribute("selected",null);
+    formElements.dateDropdown.appendChild(option);
+  });
+
 }
 
 function reloadModel() { 
@@ -203,7 +207,9 @@ function dateStringFullYear(date){
 }
 
 const updateUI = function(){
+
   let offsetDays = parseInt( formElements.dateDropdown.value ) || 0;
+  initDate();
   selectedDate = new Date( Date.now() + offsetDays*24*3600*1000 );     
   modelConfig.addMouseEars = formElements.addMouseEarsCheckbox.checked;
   modelConfig.count = parseInt( formElements.quantityField.value );
@@ -299,10 +305,8 @@ const onFileCreated = function(evt){
     onSaveComplete();
   }
   let { fileData, ext } = evt.data;
-  console.log(evt.data);
   fileData = convertToBlob(fileData);
  
-  console.log("returned file is blob?",fileData instanceof Blob);
   outputFile(ext, fileData, onDone, null);  
 }
 
@@ -340,8 +344,8 @@ const saveFile = (function () {
 }());
 
 const saveForm = function(){
-  console.log("saving");
-  console.trace();
+  console.log("saving settings locally");
+  
   Object.entries(formElements).forEach(function([key,element]){
     let value;
     if(element.type==='checkbox'){
@@ -356,8 +360,8 @@ const saveForm = function(){
 }
 
 const loadForm = function(){
-  console.log("loading");
-  console.trace();
+  console.log("loading settings locally");
+  
   Object.entries(formElements).forEach(function([key,element]){
     let value = localStorage.getItem(key);
     if(value === null)
