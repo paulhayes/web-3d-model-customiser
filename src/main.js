@@ -21,6 +21,8 @@ var modelConfig = {
   addMouseEars:false
 }; 
 
+const modelNames = ["model","feet","supports","mouseEars","cutOuts"];
+
 var buildOutput;
 var downloadButton;
 var viewer;
@@ -233,7 +235,7 @@ const updateUI = function(){
 
 const updateModel = function(){
   
-  const modelNames = ["model","feet","supports","mouseEars"];
+
   
   if( !modelNames.every(name=>!!modelConfig[name]) ){
     return;
