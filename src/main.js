@@ -16,11 +16,17 @@ var modelConfig = {
   materialType:"PETG",
   count:1, 
   model:null,
-  extrasModelsLoaded:null,
+  extrasModelsLoaded:false,
   addDate:true,
   addMaterial:true, 
   addMouseEars:false
 }; 
+// models get added to this object : 
+//  cutOuts:null, 
+//  supports:null,
+//  bottomReinforcement:null,
+//  statusCallback:null,
+
 
 const modelNames = ["model","feet","supports","mouseEars","cutOuts"];
 
@@ -45,8 +51,9 @@ const formElementsIds = {
   addMaterialCheckbox:"add-material",
   addMouseEarsCheckbox:"add-mouse-ears",
   qualityDropdown:"selected-quality",
-  layerHeightField:"layer-height"
-}
+  layerHeightField:"layer-height",
+  addBottomCheckbox : "add-bottom-reinforcement"
+  }
 var formElements = {};
 
 function init(){
@@ -149,8 +156,8 @@ function reloadModel() {
   loadFileWorker.addEventListener("message",onMessageFromFileLoader);
   loadFileWorker.postMessage({cmd:"load-stl",name:"model",url:new URL(modelConfig.modelFile, window.location.origin).toString()});
   
-  if(!modelConfig.extrasModelsLoadedl) { 
-    //console.log("loading extras");      
+  if(!modelConfig.extrasModelsLoaded) { 
+    console.log("loading extras");      
     loadFileWorker.postMessage({cmd:"load-stl",name:"feet",url:new URL("models/Feet.stl", window.location.origin).toString()});
     loadFileWorker.postMessage({cmd:"load-stl",name:"supports",url:new URL("models/Supports.stl", window.location.origin).toString()});
     loadFileWorker.postMessage({cmd:"load-stl",name:"mouseEars",url:new URL("models/mouseEars.stl", window.location.origin).toString()});  
@@ -224,6 +231,7 @@ const updateUI = function(){
   modelConfig.quality = formElements.qualityDropdown.value; 
   modelConfig.name = formElements.nameField.value;
   modelConfig.materialType = formElements.materialTypeDropdown.value;
+  modelConfig.addBottom = formElements.addBottomCheckbox.checked; 
 
   let dateStr = dateString(selectedDate);
   let labellefttext = ""; 
@@ -302,6 +310,7 @@ const onMessageFromFileWorker = function(evt){
 const onProgress = function(evt){
   //console.log(evt.data);
   updateOverlayProgress.value = evt.data.progress;
+  if(evt.data.message) updateOverlayMessage.innerText = evt.data.message;
 }
 
 const onFileCreated = function(evt){

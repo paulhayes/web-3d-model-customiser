@@ -5,7 +5,7 @@ const { CSG } = require("@jscad/csg/api").csg;
 
 function main(params) { 
     if(params.statusCallback){
-      params.statusCallback({progress:0});
+      params.statusCallback({progress:0, message:"Preparing data"});
     }
    
   
@@ -77,7 +77,7 @@ function main(params) {
     let labelsright = (labelobject2.scale([textscaleX,textscaleY,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,z]));
 
     if(params.statusCallback){
-      params.statusCallback({progress:10});
+      params.statusCallback({progress:10, message:"Calculating text indentations"});
     }
 
     // now make a single object with all the text to subtract
@@ -96,7 +96,7 @@ function main(params) {
     }
 
     if(params.statusCallback){
-      params.statusCallback({progress:20});
+      params.statusCallback({progress:20, message:"Creating shield template"});
     }
 
     let parts = [shield]; 
@@ -122,46 +122,56 @@ function main(params) {
     if(addmouseears) partsIntersecting.push(params.mouseEars);
 
     
-    if(params.bottomReinforcement) { 
-        let bounds = params.bottomReinforcement.getBounds(); 
-        let centre = bounds[1].minus(bounds[0]).scale(0.5).plus(bounds[0]); 
-        //console.log(bottomReinforcement);
-        let bottomReinforcement = centrePolyOnFloor(params.bottomReinforcement);//.translate([-centre.x,-centre.y,-bounds[0].z]);
-        for(let i = 0; i<count; i++) { 
-            parts.push(bottomReinforcement.translate([0,15-(i*10),0])); 
-        }
-
-    }
 
     let partsUnion = parts[0];
     //console.log(parts);
     for(var i=1;i<parts.length;i++){
       //console.log(i,parts[i]);
+      if(params.statusCallback){
+        params.statusCallback({progress:20+10*i/parts.length, message:"Combining shield models "+i+" of "+count});
+      }  
       partsUnion = partsUnion.unionForNonIntersecting(parts[i]);
        
       //console.log("done");
-      if(params.statusCallback){
-        params.statusCallback({progress:20+10*i/parts.length});
-      }  
+      
 
     }
 
     partsIntersectingUnion = new CSG(); 
     for(var i=0;i<partsIntersecting.length;i++){
       //console.log(i,parts[i]);
-      partsIntersectingUnion = partsIntersectingUnion.union(partsIntersecting[i]);
+     
        
       //console.log("done");
       if(params.statusCallback){
-        params.statusCallback({progress:30+60*i/partsIntersecting.length});
+        params.statusCallback({progress:30+40*i/partsIntersecting.length, message:"Combining extras "+(i+1)+" of "+count});
       }  
+       partsIntersectingUnion = partsIntersectingUnion.union(partsIntersecting[i]);
 
     }
+
+    params.statusCallback({progress:80, message:"Combining shields with supports"});
     partsUnion = partsUnion.union(partsIntersectingUnion); 
     
 
+    if(params.addBottom && params.bottomReinforcement) { 
+
+        
+        let bounds = params.bottomReinforcement.getBounds(); 
+        let centre = bounds[1].minus(bounds[0]).scale(0.5).plus(bounds[0]); 
+      
+        let bottomReinforcement = centrePolyOnFloor(params.bottomReinforcement);//.translate([-centre.x,-centre.y,-bounds[0].z]);
+          console.log(bottomReinforcement);
+        for(let i = 0; i<count; i++) { 
+            partsUnion = partsUnion.unionForNonIntersecting(bottomReinforcement.translate([0,15-(i*10),0])); 
+            params.statusCallback({progress:95, message:"Adding bottom reinforcement parts "+(i+1)+" of "+count});
+        }
+
+    }
+
+
     if(params.statusCallback){
-      params.statusCallback({progress:100});
+      params.statusCallback({progress:100, message:"Complete"});
     }
 
     return partsUnion;
