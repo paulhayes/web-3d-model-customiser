@@ -12,6 +12,7 @@ var modelConfig = {
   name:"single", 
   modelName:"PrusaHeadBandRC3", 
   quality : "high",
+  layerHeight : 0.25, 
   materialType:"PETG",
   count:1, 
   model:null,
@@ -25,6 +26,7 @@ var buildOutput;
 var downloadButton;
 var materialTypeDropdown;
 var quantityField;
+var layerHeightField;
 var dateDropdown;
 var addDateCheckbox; 
 var nameField;
@@ -53,6 +55,7 @@ function init(){
   addMaterialCheckbox = document.getElementById("add-material"); 
   addMouseEarsCheckbox = document.getElementById("add-mouse-ears"); 
   qualityDropdown = document.getElementById("selected-quality");
+  layerHeightField = document.getElementById("layer-height");
   //init 3d model viewer
   var containerdiv = document.getElementById('viewerContainer');
   var viewerdiv = document.createElement('div');
@@ -77,6 +80,10 @@ function init(){
 
   quantityField.onchange = function(){
     modelConfig.count = parseInt( quantityField.value );
+    updateModel();  
+  }
+  layerHeightField.onchange = function(){
+    modelConfig.layerHeight = parseFloat( layerHeightField.value );
     updateModel();  
   }
   addDateCheckbox.onchange = function(){
