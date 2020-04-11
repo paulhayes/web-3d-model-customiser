@@ -220,6 +220,7 @@ const updateUI = function(){
   modelConfig.addMaterial = formElements.addMaterialCheckbox.checked;
   modelConfig.quality = formElements.qualityDropdown.value; 
   modelConfig.name = formElements.nameField.value;
+  modelConfig.materialType = formElements.materialTypeDropdown.value;
 
   let dateStr = dateString(selectedDate);
   let labellefttext = ""; 
