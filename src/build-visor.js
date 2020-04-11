@@ -8,6 +8,8 @@ function main(params) {
       params.statusCallback({progress:0});
     }
    
+  
+
     let shield; 
 
     let count = params.count; 
@@ -98,6 +100,7 @@ function main(params) {
     }
 
     let parts = [shield]; 
+    let partsIntersecting = [];
 
     let supports; 
     // subtract small recesses from the bottom of the stacked shields (to help with separation)
@@ -111,26 +114,51 @@ function main(params) {
         let shieldtranslated = (shield.translate([0,0,i*objectheight]));
 
         parts.push(shieldtranslated); 
-        parts.push(supports.translate([0,0,objectheight*(i-1)]));                 
+        partsIntersecting.push(supports.translate([0,0,objectheight*(i-1)]));                 
     }
+    console.log(params.bottomReinforcement);
+   
+    if(count>2) partsIntersecting.push(params.feet);
+    if(addmouseears) partsIntersecting.push(params.mouseEars);
 
-    if(count>2) parts.push(params.feet);
-    if(addmouseears) parts.push(params.mouseEars);
+    
+    if(params.bottomReinforcement) { 
+        let bounds = params.bottomReinforcement.getBounds(); 
+        let centre = bounds[1].minus(bounds[0]).scale(0.5).plus(bounds[0]); 
+        //console.log(bottomReinforcement);
+        let bottomReinforcement = centrePolyOnFloor(params.bottomReinforcement);//.translate([-centre.x,-centre.y,-bounds[0].z]);
+        for(let i = 0; i<count; i++) { 
+            parts.push(bottomReinforcement.translate([0,15-(i*10),0])); 
+        }
+
+    }
 
     let partsUnion = parts[0];
     //console.log(parts);
     for(var i=1;i<parts.length;i++){
       //console.log(i,parts[i]);
-      partsUnion = partsUnion.union(parts[i]);
+      partsUnion = partsUnion.unionForNonIntersecting(parts[i]);
        
       //console.log("done");
       if(params.statusCallback){
-        params.statusCallback({progress:20+70*i/parts.length});
+        params.statusCallback({progress:20+10*i/parts.length});
       }  
 
     }
 
-    //if(params.bottomRein
+    partsIntersectingUnion = new CSG(); 
+    for(var i=0;i<partsIntersecting.length;i++){
+      //console.log(i,parts[i]);
+      partsIntersectingUnion = partsIntersectingUnion.union(partsIntersecting[i]);
+       
+      //console.log("done");
+      if(params.statusCallback){
+        params.statusCallback({progress:30+60*i/partsIntersecting.length});
+      }  
+
+    }
+    partsUnion = partsUnion.union(partsIntersectingUnion); 
+    
 
     if(params.statusCallback){
       params.statusCallback({progress:100});
@@ -145,6 +173,12 @@ function centrePoly(poly) {
     let bounds = poly.getBounds(); 
     let centre = bounds[1].plus(bounds[0]).scale(-0.5);
     return poly.translate([centre.x, centre.y, centre.z]);
+}
+ 
+function centrePolyOnFloor(poly) { 
+    let bounds = poly.getBounds(); 
+    let centre = bounds[1].plus(bounds[0]).scale(-0.5);
+    return poly.translate([centre.x, centre.y, -bounds[0].z]);
 }
   
 
