@@ -34,8 +34,7 @@ function main(params) {
 
     console.log(params); 
     
-    let cutouts = new CSG();
-    if(params.cutOuts) cutouts = params.cutOuts.scale([1,1,(layerheight<0.4)?layerheight*2:layerheight]);
+    let cutouts = params.cutOuts.scale([1,1,(layerheight<0.4)?layerheight*2:layerheight]);
     
     let depth=0.75;
     let xpos = 87.6-depth; 
