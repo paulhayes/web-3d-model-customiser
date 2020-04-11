@@ -161,6 +161,7 @@ function reloadModel() {
     loadFileWorker.postMessage({cmd:"load-stl",name:"supports",url:new URL("models/Supports.stl", window.location.origin).toString()});
     loadFileWorker.postMessage({cmd:"load-stl",name:"mouseEars",url:new URL("models/mouseEars.stl", window.location.origin).toString()});  
     loadFileWorker.postMessage({cmd:"load-stl",name:"cutOuts",url:new URL("models/Cutouts.stl", window.location.origin).toString()});  
+    loadFileWorker.postMessage({cmd:"load-stl",name:"bottom-reinforcement",url:new URL("models/bottom_reinforcement.stl", window.location.origin).toString()});  
     modelConfig.extrasModelsLoaded = true;
   }
 
