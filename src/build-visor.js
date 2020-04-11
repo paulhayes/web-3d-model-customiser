@@ -21,7 +21,8 @@ function main(params) {
     let layerheight = 0.25; 
     let objectheight = 20 + layerheight; 
     
-    let cutouts = params.cutOuts.scale([1,1,0.5]);
+    let cutouts = new CSG();
+    if(params.cutOuts) cutouts = params.cutOuts.scale([1,1,0.5]);
     
     let depth=0.75;
     let xpos = 87.6-depth; 
