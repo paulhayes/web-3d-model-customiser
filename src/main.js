@@ -31,7 +31,7 @@ var nameField;
 var viewer;
 var updatingModel;
 var cancelUpdate;
-var lastInput;
+var lastInput = false;
 var updateOverlayNodes;
 var updateOverlayMessage;
 var updateOverlayProgress;
@@ -91,29 +91,6 @@ function init(){
   });
   viewer.init();
 
-  loadForm();
-  /* init model dropdown */
-  reloadModel(); 
-  /*
-  quantityField.onchange = function(){
-    updateModel();  
-  }
-  addDateCheckbox.onchange = function(){
-    updateModel();  
-  }
-  addMaterialCheckbox.onchange = function(){
-    updateModel();  
-  }
-  formElements.addMouseEarsCheckbox.onchange = function(){
-    updateModel();  
-  }
-  */
-  /* init material dropdown */
-  formElements.materialTypeDropdown.onchange = function(){ 
-    modelConfig.materialType = materialTypeDropdown.value; 
-    
-  };
-
 
   const onInput = function(){ lastInput=Date.now()-inputTimeout }; 
   Object.entries(formElements).forEach(function([key,element]){
@@ -128,17 +105,9 @@ function init(){
 
   formElements.qualityDropdown.onchange = function(){
     console.log("qualityDropdown.onchange"); 
-    modelConfig.quality = qualityDropdown.value; 
-    //modelConfig.modelFile = `models/${modelConfig.model}.jscad`;
+    updateUI();
     reloadModel(); 
-    //updateModel();  
   }
-
-  /* init name field */
-  formElements.nameField.oninput = function(){ lastInput=Date.now() };
-  //input update check
-  setInterval(inputUpdateCheck,100);
-  
 
   /* init date dropdown */
   let days = ["today","+1 day","","","","","",""];
@@ -167,10 +136,15 @@ function init(){
     
   });
 
+
+  loadForm();
+  updateUI();
+  reloadModel(); 
+  setInterval(inputUpdateCheck,100);
 }
 
 function reloadModel() { 
-
+  
   modelConfig.modelFile = `models/${modelConfig.modelName}_${modelConfig.quality}.stl`;
   let loadFileWorker = work(require("./file-loader"));
   loadFileWorker.addEventListener("message",onMessageFromFileLoader);
@@ -191,6 +165,8 @@ function inputUpdateCheck(){
     var elapsed = Date.now()-lastInput;
     if(elapsed>inputTimeout){
       lastInput = false;
+      updateUI();
+      saveForm();
       updateModel();
     }
   }
@@ -215,13 +191,8 @@ function onModelBuildStart(){
   updateOverlayProgress.removeAttribute("value");
 }
 
-function onModelBuildComplete(){
-  Array.prototype.forEach.call(updateOverlayNodes,(n)=>{ n.style.visibility = "hidden" });
-  /*
-  for (i = 0; i < updateOverlayNodes.length; i++) {
-    updateOverlayNodes[i].style.visibility = "hidden";
-  }
-  */
+function onModelBuildComplete(){  
+  Array.prototype.forEach.call(updateOverlayNodes,(n)=>{ n.style.visibility = "hidden" });  
   downloadButton.disabled = false;  
   viewer.viewpointY = 11 - ((modelConfig.count*20.25)*0.5); 
   viewer.onDraw();
@@ -247,21 +218,31 @@ const updateUI = function(){
   modelConfig.count = parseInt( formElements.quantityField.value );
   modelConfig.addDate = formElements.addDateCheckbox.checked;
   modelConfig.addMaterial = formElements.addMaterialCheckbox.checked;
-  
+  modelConfig.quality = formElements.qualityDropdown.value; 
+  modelConfig.name = formElements.nameField.value;
+
+  let dateStr = dateString(selectedDate);
+  let labellefttext = ""; 
+  if(modelConfig.addMaterial) labellefttext = modelConfig.materialType+" ";
+  if(modelConfig.addDate) labellefttext = labellefttext + dateStr;  
+  modelConfig.labellefttext = labellefttext;
+
   formElements.dateDropdown.disabled = !formElements.addDateCheckbox.checked;
   formElements.materialTypeDropdown.disabled = !formElements.addMaterialCheckbox.checked;
 
-  saveForm();
+  
 }
 
 const updateModel = function(){
   
-  updateUI();
   const modelNames = ["model","feet","supports","mouseEars"];
   
   if( !modelNames.every(name=>!!modelConfig[name]) ){
     return;
   }
+
+
+
   if(updatingModel){
     if(cancelUpdate){
       if(typeof(cancelUpdate)!=="function")
@@ -277,12 +258,8 @@ const updateModel = function(){
   updatingModel = true;
   onModelBuildStart();
   //const parameters = getParameterValues(this.paramControls)
-  modelConfig.name = formElements.nameField.value;
-  let dateStr = dateString(selectedDate);
-  let labellefttext = ""; 
-  if(modelConfig.addMaterial) labellefttext = modelConfig.materialType+" ";
-  if(modelConfig.addDate) labellefttext = labellefttext + dateStr;  
-  modelConfig.labellefttext = labellefttext;
+  
+
   
   let buildWorker = work(require("./rebuild-worker"));
   buildWorker.addEventListener("message",onMessageFromBuilder);
@@ -372,6 +349,8 @@ const saveFile = (function () {
 }());
 
 const saveForm = function(){
+  console.log("saving");
+  console.trace();
   Object.entries(formElements).forEach(function([key,element]){
     let value;
     if(element.type==='checkbox'){
@@ -380,16 +359,21 @@ const saveForm = function(){
     else {
       value = element.value;
     }
+    
     localStorage.setItem(key,value);
   });
 }
 
 const loadForm = function(){
+  console.log("loading");
+  console.trace();
   Object.entries(formElements).forEach(function([key,element]){
     let value = localStorage.getItem(key);
     if(value === null)
       return;
-    if(element.type==='checkbox'){
+     
+
+      if(element.type==='checkbox'){
       element.checked = ( value === 'true' );
     } 
     else if(element.type==='number'){
