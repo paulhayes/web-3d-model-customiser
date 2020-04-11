@@ -11,7 +11,7 @@ const work = require('webworkify');
 var modelConfig = {
   name:"single", 
   modelName:"PrusaHeadBandRC3", 
-  quality : "low",
+  quality : "high",
   materialType:"PETG",
   count:1, 
   model:null,
