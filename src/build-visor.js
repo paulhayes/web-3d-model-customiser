@@ -7,8 +7,7 @@ function main(params) {
     if(params.statusCallback){
       params.statusCallback({progress:0});
     }
- 
-
+   
     let shield; 
 
     let count = params.count; 
@@ -131,6 +130,8 @@ function main(params) {
       }  
 
     }
+
+    //if(params.bottomRein
 
     if(params.statusCallback){
       params.statusCallback({progress:100});
