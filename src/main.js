@@ -59,17 +59,6 @@ function init(){
   updateOverlayMessage = document.querySelector(".update-overlay .update-message");
   updateOverlayProgress =  document.querySelector(".update-overlay .update-progress");
 
-  /*
-  nameField = document.getElementById("name-field");
-  materialTypeDropdown = document.getElementById("material-type");  
-  quantityField = document.getElementById("stack-count");
-  dateDropdown = document.getElementById("selected-date");
-  addDateCheckbox = document.getElementById("add-date"); 
-  addMaterialCheckbox = document.getElementById("add-material"); 
-  addMouseEarsCheckbox = document.getElementById("add-mouse-ears"); 
-  qualityDropdown = document.getElementById("selected-quality");
-  */
-
   Object.entries(formElementsIds).forEach(([key,value])=>formElements[key]=document.getElementById(value));
 
   //init 3d model viewer
@@ -103,9 +92,11 @@ function init(){
     }
   });
 
+  // handled seperately as it requires a model reload
   formElements.qualityDropdown.onchange = function(){
     console.log("qualityDropdown.onchange"); 
     updateUI();
+    saveForm();
     reloadModel(); 
   }
 
