@@ -151,7 +151,7 @@ function reloadModel() {
     //console.log("loading extras");      
     loadFileWorker.postMessage({cmd:"load-stl",name:"feet",url:new URL("models/Feet.stl", window.location.origin).toString()});
     loadFileWorker.postMessage({cmd:"load-stl",name:"supports",url:new URL("models/Supports.stl", window.location.origin).toString()});
-    loadFileWorker.postMessage({cmd:"load-stl",name:"mouseEars",url:new URL("models/mouseEars.stl", window.location.origin).toString()});  
+    loadFileWorker.postMessage({cmd:"load-stl",name:"mouseEars",url:new URL("models/MouseEars.stl", window.location.origin).toString()});
     loadFileWorker.postMessage({cmd:"load-stl",name:"cutOuts",url:new URL("models/Cutouts.stl", window.location.origin).toString()});  
     modelConfig.extrasModelsLoaded = true;
   }
