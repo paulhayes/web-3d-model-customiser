@@ -28,7 +28,7 @@ var modelConfig = {
 //  statusCallback:null,
 
 
-const modelNames = ["model","feet","supports","mouseEars","cutOuts"];
+const modelNames = ["model","feet","supports","mouseEars","cutOuts", "bottomReinforcement"];
 
 var buildOutput;
 var downloadButton;
@@ -88,7 +88,6 @@ function init(){
 
   const onInput = function(){ lastInput=Date.now()-inputTimeout }; 
   Object.entries(formElements).forEach(function([key,element]){
-    
     if(element.type==='text'){
       element.oninput = onInput;
     }
@@ -232,12 +231,13 @@ const updateUI = function(){
   modelConfig.name = formElements.nameField.value;
   modelConfig.materialType = formElements.materialTypeDropdown.value;
   modelConfig.addBottom = formElements.addBottomCheckbox.checked; 
+  modelConfig.layerHeight = parseFloat(formElements.layerHeightField.value); 
 
   let dateStr = dateString(selectedDate);
   let labellefttext = ""; 
   if(modelConfig.addMaterial) labellefttext = modelConfig.materialType+" ";
   if(modelConfig.addDate) labellefttext = labellefttext + dateStr;  
-  modelConfig.labellefttext = labellefttext;
+  modelConfig.dateString = dateStr;
 
   formElements.dateDropdown.disabled = !formElements.addDateCheckbox.checked;
   formElements.materialTypeDropdown.disabled = !formElements.addMaterialCheckbox.checked;

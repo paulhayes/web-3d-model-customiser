@@ -4,12 +4,11 @@ const { vector_text } = require("@jscad/csg/src/api/text");
 const { CSG } = require("@jscad/csg/api").csg;
 
 function main(params) { 
+
     if(params.statusCallback){
       params.statusCallback({progress:0, message:"Preparing data"});
     }
    
-  
-
     let shield; 
 
     let count = params.count; 
@@ -24,7 +23,6 @@ function main(params) {
         layercount = Math.round(layercount); 
         objectheight = layercount*layerheight; 
     } 
-    console.log("objectheight", objectheight);
 
     if(objectheight!=20) { 
        shield = params.model.scale([1,1,objectheight/20]);
@@ -36,8 +34,17 @@ function main(params) {
 
     console.log(params); 
     
+    // the cutouts are small indentations at the bottom of the shield to aid with stacking
     let cutouts = params.cutOuts.scale([1,1,(layerheight<0.4)?layerheight*2:layerheight]);
     
+
+
+    // OLD TEXT
+    let labellefttext = ""; 
+    if(params.addMaterial) labellefttext = params.materialType+" ";
+    if(params.addDate) labellefttext = labellefttext + params.dateString;  
+
+
     let depth=0.75;
     let xpos = 87.6-depth; 
     let yposleft = -38;//-4; 
@@ -47,34 +54,24 @@ function main(params) {
     let textscaleX = 0.15; 
 
     // get outlines for the text and extrude them
-    let labellefttext = params.labellefttext;
-    let labeloutlines1 = vector_text(0,0,labellefttext);
-    let labelextruded1 = [];
-    
-    labeloutlines1.forEach(function(pl) {                   // pl = polyline (not closed)
-      labelextruded1.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
-    });
-
-    let labeloutlines2 = vector_text(0,0,name);
-    let labelextruded2 = [];
-
-    labeloutlines2.forEach(function(pl) {                   // pl = polyline (not closed)
-      labelextruded2.push(rectangular_extrude(pl, {w: 4, h: depth}));   // extrude it to 3D
-    });
+    //let labellefttext = params.labellefttext;
 
     if(params.statusCallback){
-      params.statusCallback({progress:10});
+      params.statusCallback({progress:5, message:"Building text objects"});
     }
 
     // put the letter objects into a single CSG object
-    let labelobject1 = union(labelextruded1);
-    let labelobject2 = union(labelextruded2);
+    let labelobject1 = getTextObject(labellefttext,4,depth);
+    let labelobject2 = getTextObject(name,4,depth);
     
     // adjust the size and position of all the text
     let z = zpos + objectheight/2; 
+    console.log(z, zpos, objectheight);
     let leftbounds = labelobject1.scale([textscaleX,textscaleY,1]).getBounds(); 
     let labelsleft = (labelobject1.scale([textscaleX,textscaleY,1]).rotateX(90).rotateZ(-90).translate([-xpos,yposleft+leftbounds[1].x,z]));
     let labelsright = (labelobject2.scale([textscaleX,textscaleY,1]).rotateX(90).rotateZ(90).translate([xpos,yposright,z]));
+
+    // NEW TEXT
 
     if(params.statusCallback){
       params.statusCallback({progress:10, message:"Calculating text indentations"});
@@ -84,12 +81,12 @@ function main(params) {
     let subtractobject = new CSG(); 
    
     if(name!="") {
-      subtractobject = subtractobject.union(labelsright); 
+      subtractobject = subtractobject.unionForNonIntersecting(labelsright); 
     }
     if(labellefttext!="") {
-      subtractobject = subtractobject.union(labelsleft); 
+      subtractobject = subtractobject.unionForNonIntersecting(labelsleft); 
     }
-
+    
     // if we have something to subtract, then subtract it! 
     if(subtractobject.polygons.length>0) {
       shield = shield.subtract(subtractobject); 
@@ -178,6 +175,16 @@ function main(params) {
     
 }
 
+function getTextObject(text, size, depth) { 
+    //vectorText({height:5,font: myfont},"HELLO");
+    let outlines = vector_text(0,0, text );
+    let extrudedObjects = [];
+    
+    outlines.forEach(function(letteroutline) {                   
+      extrudedObjects.push(rectangular_extrude(letteroutline, {w: 4, h: depth}));  
+    });
+    return union(extrudedObjects); 
+}
 
 function centrePoly(poly) { 
     let bounds = poly.getBounds(); 
