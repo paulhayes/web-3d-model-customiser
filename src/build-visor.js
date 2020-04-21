@@ -108,10 +108,11 @@ function main(params) {
     
     for(var i = 1; i<count; i++) { 
 
-        let shieldtranslated = (shield.translate([0,0,i*objectheight]));
+        let shieldZPosition = (layercount+1)*i * layerheight; // works on a layer count basis to avoid rounding errors
+        let shieldtranslated = (shield.translate([0,0,shieldZPosition]));
 
         parts.push(shieldtranslated); 
-        partsIntersecting.push(supports.translate([0,0,objectheight*(i-1)]));                 
+        partsIntersecting.push(supports.translate([0,0,(layercount+1)*(i-1) * layerheight]));                 
     }
     console.log(params.bottomReinforcement);
    
